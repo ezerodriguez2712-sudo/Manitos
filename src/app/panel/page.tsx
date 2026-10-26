@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
+import { Azulejo, Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
 import { ESTADO_LABEL, hace, pesos, type Pedido, type Presupuesto } from "@/lib/types";
@@ -36,9 +36,12 @@ function PanelCliente({ id }: { id: string }) {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="titulo">Mis pedidos</h1>
-        <Link href="/pedidos/nuevo" className="btn py-2.5">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="titulo">Mis pedidos</h1>
+          <p className="text-sm text-gris">Acá ves los presupuestos que te llegan.</p>
+        </div>
+        <Link href="/pedidos/nuevo" className="btn-cinta shrink-0 whitespace-nowrap py-2.5">
           + Nuevo pedido
         </Link>
       </div>
@@ -46,8 +49,8 @@ function PanelCliente({ id }: { id: string }) {
         <Cargando />
       ) : pedidos.length === 0 ? (
         <div className="tarjeta mt-6 text-center">
-          <p className="text-4xl">🧰</p>
-          <p className="mt-2 font-semibold">Todavía no publicaste pedidos</p>
+          <div className="mx-auto w-fit"><Azulejo nombre="Plomería" icono="🧰" /></div>
+          <p className="mt-3 font-titulo text-lg font-bold">Todavía no publicaste pedidos</p>
           <p className="text-sm text-gris">Contá qué necesitás y te van a llegar presupuestos.</p>
           <Link href="/pedidos/nuevo" className="btn mt-4">
             Publicar mi primer pedido
@@ -59,21 +62,25 @@ function PanelCliente({ id }: { id: string }) {
             const n = p.presupuestos?.[0]?.count ?? 0;
             return (
               <li key={p.id}>
-                <Link href={`/pedidos/${p.id}`} className="tarjeta block hover:border-marca">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs text-gris">
-                        {p.rubros?.icono} {p.rubros?.nombre} · {hace(p.creado_en)}
-                      </p>
-                      <p className="mt-1 font-semibold">{p.titulo}</p>
+                <Link href={`/pedidos/${p.id}`} className="tarjeta flex gap-3 hover:border-marca">
+                  <Azulejo nombre={p.rubros?.nombre} icono={p.rubros?.icono} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold leading-snug">{p.titulo}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <EstadoChip estado={p.estado} label={ESTADO_LABEL[p.estado]} />
+                      <span className="text-xs text-gris">
+                        {p.rubros?.nombre}, {hace(p.creado_en)}
+                      </span>
                     </div>
-                    <EstadoChip estado={p.estado} label={ESTADO_LABEL[p.estado]} />
+                    {p.estado === "abierto" &&
+                      (n === 0 ? (
+                        <p className="mt-2 text-sm text-gris">Esperando presupuestos</p>
+                      ) : (
+                        <p className="mt-2 inline-flex rounded-lg bg-cinta px-2.5 py-1 text-sm font-bold">
+                          {n} presupuesto{n > 1 ? "s" : ""} para comparar
+                        </p>
+                      ))}
                   </div>
-                  {p.estado === "abierto" && (
-                    <p className="mt-3 text-sm font-medium text-marca">
-                      {n === 0 ? "Esperando presupuestos…" : `${n} presupuesto${n > 1 ? "s" : ""} para comparar →`}
-                    </p>
-                  )}
                 </Link>
               </li>
             );
@@ -120,8 +127,8 @@ function PanelProfesional({ id }: { id: string }) {
     <>
       <h1 className="titulo">Trabajos</h1>
       {!tieneRubros && (
-        <Link href="/perfil" className="mt-4 block rounded-xl bg-marca-suave p-3 text-sm text-marca-oscuro">
-          <b>Elegí tus rubros</b> en tu perfil para empezar a ver pedidos →
+        <Link href="/perfil" className="mt-4 block rounded-xl border-2 border-dashed border-cinta-oscuro bg-cinta/20 p-3 text-sm">
+          <b>Elegí tus rubros</b> en tu perfil para empezar a ver pedidos.
         </Link>
       )}
       <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-white p-1 ring-1 ring-borde">
@@ -129,7 +136,7 @@ function PanelProfesional({ id }: { id: string }) {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`rounded-lg py-2 text-sm font-semibold ${tab === t ? "bg-marca text-white" : "text-gris"}`}
+            className={`rounded-lg py-2 text-sm font-semibold ${tab === t ? "bg-tinta text-white" : "text-gris"}`}
           >
             {t === "disponibles" ? `Pedidos nuevos${disponibles ? ` (${disponibles.length})` : ""}` : "Mis presupuestos"}
           </button>
@@ -145,19 +152,20 @@ function PanelProfesional({ id }: { id: string }) {
           <ul className="mt-4 space-y-3">
             {disponibles.map((p) => (
               <li key={p.id}>
-                <Link href={`/pedidos/${p.id}`} className="tarjeta block hover:border-marca">
-                  <div className="flex items-center justify-between text-xs text-gris">
-                    <span>
-                      {p.rubros?.icono} {p.rubros?.nombre} · 📍 {p.zona}
-                    </span>
-                    <span>{hace(p.creado_en)}</span>
+                <Link href={`/pedidos/${p.id}`} className="tarjeta flex gap-3 hover:border-marca">
+                  <Azulejo nombre={p.rubros?.nombre} icono={p.rubros?.icono} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {p.urgencia === "urgente" && (
+                        <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">Urgente</span>
+                      )}
+                      <span className="meta">📍 {p.zona}</span>
+                      <span className="text-xs text-gris">{hace(p.creado_en)}</span>
+                    </div>
+                    <p className="mt-1 font-bold leading-snug">{p.titulo}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-gris">{p.descripcion}</p>
+                    <p className="mt-3 text-sm font-bold text-marca">Enviar presupuesto</p>
                   </div>
-                  <p className="mt-1 font-semibold">
-                    {p.urgencia === "urgente" && <span className="mr-1 text-red-600">⚡ Urgente ·</span>}
-                    {p.titulo}
-                  </p>
-                  <p className="mt-1 line-clamp-2 text-sm text-gris">{p.descripcion}</p>
-                  <p className="mt-3 text-sm font-semibold text-marca">Enviar presupuesto →</p>
                 </Link>
               </li>
             ))}
@@ -173,12 +181,15 @@ function PanelProfesional({ id }: { id: string }) {
             <li key={p.id}>
               <Link href={`/pedidos/${p.pedido_id}`} className="tarjeta block hover:border-marca">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-gris">
-                      {p.pedidos?.rubros?.icono} {p.pedidos?.rubros?.nombre} · 📍 {p.pedidos?.zona}
-                    </p>
-                    <p className="mt-1 font-semibold">{p.pedidos?.titulo}</p>
-                    <p className="text-sm text-gris">Tu oferta: {pesos(p.monto)}</p>
+                  <div className="flex gap-3">
+                    <Azulejo nombre={p.pedidos?.rubros?.nombre} icono={p.pedidos?.rubros?.icono} chico />
+                    <div>
+                      <p className="font-bold leading-snug">{p.pedidos?.titulo}</p>
+                      <p className="text-xs text-gris">📍 {p.pedidos?.zona}</p>
+                      <p className="mt-1 text-sm">
+                        Tu oferta: <b className="font-titulo">{pesos(p.monto)}</b>
+                      </p>
+                    </div>
                   </div>
                   <EstadoChip
                     estado={p.estado}

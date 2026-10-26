@@ -70,7 +70,7 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
           <div key={m.id} className={`flex ${m.autor_id === yo ? "justify-end" : "justify-start"}`}>
             <p
               className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                m.autor_id === yo ? "bg-marca text-white" : "bg-fondo"
+                m.autor_id === yo ? "rounded-br-md bg-marca text-white" : "rounded-bl-md bg-fondo"
               }`}
             >
               {m.texto}

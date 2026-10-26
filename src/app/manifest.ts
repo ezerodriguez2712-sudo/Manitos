@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Profesionales para tu casa en Córdoba",
     start_url: "/panel",
     display: "standalone",
-    background_color: "#faf7f2",
-    theme_color: "#e8590c",
+    background_color: "#edf1f7",
+    theme_color: "#1f4fd1",
     lang: "es-AR",
     icons: [
       { src: "/icono-192.png", sizes: "192x192", type: "image/png" },

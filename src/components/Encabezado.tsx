@@ -10,25 +10,76 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
     await supabase().auth.signOut();
     router.replace("/");
   };
+  const inicial = (perfil?.nombre?.trim()[0] || "?").toUpperCase();
   return (
-    <header className="sticky top-0 z-10 border-b border-borde bg-fondo/90 backdrop-blur">
+    <header className="sticky top-0 z-10 bg-marca text-white">
       <div className="contenedor flex h-14 items-center justify-between">
-        <Link href={perfil ? "/panel" : "/"} className="flex items-center gap-2 text-lg font-extrabold">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-marca text-white">🛠️</span>
-          Manitos
+        <Link href={perfil ? "/panel" : "/"} className="flex items-center gap-2">
+          <Logo />
+          <span className="font-titulo text-xl font-extrabold tracking-tight">Manitos</span>
         </Link>
         {perfil && (
-          <nav className="flex items-center gap-3 text-sm">
-            <Link href="/perfil" className="font-medium text-gris hover:text-tinta">
+          <nav className="flex items-center gap-2 text-sm">
+            <Link
+              href="/perfil"
+              className="flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 font-semibold hover:bg-white/20"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-cinta text-xs font-bold text-tinta">
+                {inicial}
+              </span>
               {perfil.nombre?.split(" ")[0] || "Mi perfil"}
             </Link>
-            <button onClick={salir} className="text-gris hover:text-tinta">
+            <button onClick={salir} className="rounded-full px-3 py-1.5 text-white/75 hover:bg-white/10 hover:text-white">
               Salir
             </button>
           </nav>
         )}
       </div>
+      <div className="cinta-metrica h-2" aria-hidden />
     </header>
+  );
+}
+
+/** Casita con cinta métrica: el logo de Manitos */
+export function Logo({ grande = false }: { grande?: boolean }) {
+  const t = grande ? 44 : 32;
+  return (
+    <svg width={t} height={t} viewBox="0 0 32 32" aria-hidden className="shrink-0">
+      <rect width="32" height="32" rx="9" fill="#ffc21a" />
+      <path d="M16 6 L26 14 V25 H6 V14 Z" fill="#13213f" />
+      <rect x="13" y="17" width="6" height="8" rx="1" fill="#ffc21a" />
+      <path d="M6 28h20" stroke="#13213f" strokeWidth="1.5" strokeDasharray="1 3" />
+    </svg>
+  );
+}
+
+const COLORES_RUBRO: Record<string, string> = {
+  "Plomería": "#d6e9ff",
+  "Electricidad": "#fff1b8",
+  "Gas": "#ffe0d1",
+  "Albañilería": "#f3dfd2",
+  "Pintura": "#f6dcf2",
+  "Carpintería": "#efe2cc",
+  "Cerrajería": "#e4e7ee",
+  "Aire acondicionado": "#d8f3f6",
+  "Jardinería": "#dcf2d9",
+  "Limpieza": "#e2f0ff",
+  "Herrería": "#e0e2e8",
+  "Mudanzas y fletes": "#ffe7c7",
+  "Techos y membranas": "#e6e1f7",
+  "Electrodomésticos": "#dfeef0",
+};
+
+/** Ícono del rubro dentro de un azulejo de color */
+export function Azulejo({ nombre, icono, chico = false }: { nombre?: string; icono?: string; chico?: boolean }) {
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-xl ${chico ? "h-9 w-9 text-lg" : "h-12 w-12 text-2xl"}`}
+      style={{ background: COLORES_RUBRO[nombre ?? ""] ?? "#e3ebff" }}
+      aria-hidden
+    >
+      {icono ?? "🛠️"}
+    </span>
   );
 }
 
@@ -76,7 +127,7 @@ export function EstadoChip({ estado, label }: { estado: string; label: string })
     rechazado: "bg-gray-100 text-gray-500",
   };
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${color[estado] ?? ""}`}>{label}</span>
+    <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${color[estado] ?? ""}`}>{label}</span>
   );
 }
 

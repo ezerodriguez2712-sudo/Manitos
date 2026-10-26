@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
+import { Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
 import { Chat } from "@/components/Chat";
 import { useSesion } from "@/lib/useSesion";
 import { fotoUrl, supabase } from "@/lib/supabase";
@@ -104,16 +104,21 @@ function FichaPedido({ d }: { d: Datos }) {
   const p = d.pedido;
   return (
     <section className="tarjeta">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm text-gris">
-          {p.rubros?.icono} {p.rubros?.nombre} · 📍 {p.zona} · {hace(p.creado_en)}
-        </p>
-        <EstadoChip estado={p.estado} label={ESTADO_LABEL[p.estado]} />
+      <div className="flex items-start gap-3">
+        <Azulejo nombre={p.rubros?.nombre} icono={p.rubros?.icono} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <EstadoChip estado={p.estado} label={ESTADO_LABEL[p.estado]} />
+            {p.urgencia === "urgente" && (
+              <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">Urgente</span>
+            )}
+          </div>
+          <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-tight">{p.titulo}</h1>
+          <p className="mt-1 text-sm text-gris">
+            {p.rubros?.nombre} en {p.zona}, publicado {hace(p.creado_en)}
+          </p>
+        </div>
       </div>
-      <h1 className="mt-2 text-xl font-bold">
-        {p.urgencia === "urgente" && <span className="text-red-600">⚡ </span>}
-        {p.titulo}
-      </h1>
       <p className="mt-2 whitespace-pre-line text-gris">{p.descripcion}</p>
       {p.fotos.length > 0 && (
         <div className="mt-3 flex gap-2 overflow-x-auto">
@@ -171,7 +176,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                     <Estrellas {...d.reputaciones[pr.profesional_id]} />
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-extrabold">{pesos(pr.monto)}</p>
+                    <p className="font-titulo text-2xl font-extrabold">{pesos(pr.monto)}</p>
                     {i === 0 && d.presupuestos.length > 1 && <span className="chip">Más económico</span>}
                   </div>
                 </div>
@@ -182,7 +187,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                 {pr.perfiles?.descripcion && (
                   <p className="mt-2 text-xs text-gris">Sobre el profesional: {pr.perfiles.descripcion}</p>
                 )}
-                <button className="btn mt-3 w-full py-2.5" disabled={ocupado} onClick={() => elegir(pr)}>
+                <button className={`${i === 0 ? "btn" : "btn-sec"} mt-3 w-full py-2.5`} disabled={ocupado} onClick={() => elegir(pr)}>
                   Elegir este presupuesto
                 </button>
               </li>
@@ -206,13 +211,13 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
     <>
       {elegido && pro && (
         <section className="tarjeta border-marca">
-          <p className="text-xs font-semibold uppercase tracking-wide text-marca">Profesional elegido</p>
+          <p className="text-sm font-semibold text-marca">Elegiste a este profesional</p>
           <div className="mt-1 flex items-center justify-between">
             <div>
               <p className="font-semibold">{pro.nombre}</p>
               <Estrellas {...d.reputaciones[pro.id]} />
             </div>
-            <p className="text-xl font-extrabold">{pesos(elegido.monto)}</p>
+            <p className="font-titulo text-2xl font-extrabold">{pesos(elegido.monto)}</p>
           </div>
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" className="btn-sec mt-3 w-full py-2.5">
@@ -255,8 +260,8 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
   if (mio.estado === "enviado")
     return (
       <section className="tarjeta">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gris">Tu presupuesto</p>
-        <p className="mt-1 text-2xl font-extrabold">{pesos(mio.monto)}</p>
+        <p className="text-sm font-semibold text-gris">Tu presupuesto</p>
+        <p className="mt-1 font-titulo text-3xl font-extrabold">{pesos(mio.monto)}</p>
         {mio.fecha_disponible && <p className="text-sm">📅 Desde el {fecha(mio.fecha_disponible)}</p>}
         {mio.mensaje && <p className="mt-2 text-sm text-gris">“{mio.mensaje}”</p>}
         <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">

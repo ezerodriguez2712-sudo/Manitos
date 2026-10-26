@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Cargando, Encabezado } from "@/components/Encabezado";
+import { Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
 import type { Rubro } from "@/lib/types";
@@ -89,11 +89,13 @@ export default function NuevoPedido() {
                   type="button"
                   key={r.id}
                   onClick={() => setRubroId(r.id)}
-                  className={`rounded-xl border px-3 py-2.5 text-left text-sm ${
-                    rubroId === r.id ? "border-marca bg-marca-suave font-semibold" : "border-borde bg-white"
+                  aria-pressed={rubroId === r.id}
+                  className={`flex items-center gap-2.5 rounded-xl border-2 p-2 text-left text-sm font-semibold leading-tight ${
+                    rubroId === r.id ? "border-marca bg-marca-suave" : "border-transparent bg-white"
                   }`}
                 >
-                  {r.icono} {r.nombre}
+                  <Azulejo nombre={r.nombre} icono={r.icono} chico />
+                  {r.nombre}
                 </button>
               ))}
             </div>
@@ -140,7 +142,7 @@ export default function NuevoPedido() {
             </span>
           </label>
           {error && <p className="aviso-error">{error}</p>}
-          <button className="btn w-full" disabled={enviando}>
+          <button className="btn-cinta w-full" disabled={enviando}>
             {enviando ? "Publicando…" : "Publicar y recibir presupuestos"}
           </button>
         </form>
