@@ -261,7 +261,8 @@ create policy "pr_alta"   on public.profesional_rubros for insert to authenticat
 create policy "pr_baja"   on public.profesional_rubros for delete to authenticated using (profesional_id = auth.uid());
 
 -- Pedidos
-create policy "pedidos_ver"    on public.pedidos for select to authenticated using (public.puede_ver_pedido(id));
+create policy "pedidos_ver"    on public.pedidos for select to authenticated
+  using (cliente_id = auth.uid() or public.puede_ver_pedido(id));
 create policy "pedidos_alta"   on public.pedidos for insert to authenticated with check (cliente_id = auth.uid());
 create policy "pedidos_editar" on public.pedidos for update to authenticated using (cliente_id = auth.uid());
 
