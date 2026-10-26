@@ -7,8 +7,8 @@ import { supabase } from "@/lib/supabase";
 import { ESTADO_LABEL, hace, pesos, type Pedido, type Presupuesto } from "@/lib/types";
 
 export default function Panel() {
-  const { perfil, cargando } = useSesion();
-  if (cargando || !perfil) return (<><Encabezado /><Cargando /></>);
+  const { perfil, cargando, error: errorSesion } = useSesion();
+  if (cargando || !perfil) return (<><Encabezado /><Cargando error={errorSesion} /></>);
   return (
     <>
       <Encabezado perfil={perfil} />

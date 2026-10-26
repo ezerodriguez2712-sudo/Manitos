@@ -32,7 +32,22 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
   );
 }
 
-export function Cargando() {
+export function Cargando({ error }: { error?: string }) {
+  if (error)
+    return (
+      <div className="contenedor py-10">
+        <p className="aviso-error">{error}</p>
+        <button
+          className="btn-sec mt-4"
+          onClick={async () => {
+            await supabase().auth.signOut().catch(() => {});
+            window.location.href = "/ingresar";
+          }}
+        >
+          Salir y volver a ingresar
+        </button>
+      </div>
+    );
   return (
     <div className="grid min-h-[50dvh] place-items-center text-gris">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-marca-suave border-t-marca" />

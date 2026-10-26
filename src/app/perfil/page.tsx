@@ -134,12 +134,12 @@ function Formulario({ perfil }: { perfil: Perfil }) {
 }
 
 export default function PaginaPerfil() {
-  const { perfil, cargando } = useSesion();
+  const { perfil, cargando, error: errorSesion } = useSesion();
   return (
     <>
       <Encabezado perfil={perfil} />
       {cargando || !perfil ? (
-        <Cargando />
+        <Cargando error={errorSesion} />
       ) : (
         <Suspense>
           <Formulario perfil={perfil} />

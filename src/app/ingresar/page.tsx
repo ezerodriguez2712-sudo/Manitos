@@ -25,22 +25,27 @@ function Formulario() {
     setError("");
     setInfo("");
     setEnviando(true);
-    const sb = supabase();
-    if (modo === "registro") {
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password: clave,
-        options: { data: { nombre, telefono, rol } },
-      });
-      if (error) setError(traducir(error.message));
-      else if (!data.session) setInfo("Te mandamos un mail para confirmar la cuenta. Abrilo y después ingresá.");
-      else router.replace(rol === "profesional" ? "/perfil?bienvenida=1" : "/panel");
-    } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password: clave });
-      if (error) setError(traducir(error.message));
-      else router.replace("/panel");
+    try {
+      const sb = supabase();
+      if (modo === "registro") {
+        const { data, error } = await sb.auth.signUp({
+          email,
+          password: clave,
+          options: { data: { nombre, telefono, rol } },
+        });
+        if (error) setError(traducir(error.message));
+        else if (!data.session) setInfo("Te mandamos un mail para confirmar la cuenta. Abrilo y después ingresá.");
+        else router.replace(rol === "profesional" ? "/perfil?bienvenida=1" : "/panel");
+      } else {
+        const { error } = await sb.auth.signInWithPassword({ email, password: clave });
+        if (error) setError(traducir(error.message));
+        else router.replace("/panel");
+      }
+    } catch (err) {
+      setError("No se pudo conectar con el servidor: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setEnviando(false);
     }
-    setEnviando(false);
   };
 
   return (
@@ -123,6 +128,8 @@ function traducir(msg: string) {
   if (msg.includes("already registered")) return "Ese email ya tiene una cuenta. Probá ingresar.";
   if (msg.includes("Email not confirmed")) return "Todavía no confirmaste tu email. Revisá tu casilla.";
   if (msg.includes("Password should")) return "La contraseña debe tener al menos 6 caracteres.";
+  if (msg.includes("rate limit")) return "Se mandaron demasiados mails de confirmación. Esperá un rato o desactivá 'Confirm email' en Supabase.";
+  if (msg.includes("Database error")) return "Error de la base de datos al crear la cuenta. Revisá que se haya ejecutado instalar.sql.";
   return msg;
 }
 

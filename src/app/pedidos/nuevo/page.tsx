@@ -10,7 +10,7 @@ const MAX_FOTOS = 4;
 
 export default function NuevoPedido() {
   const router = useRouter();
-  const { perfil, cargando } = useSesion();
+  const { perfil, cargando, error: errorSesion } = useSesion();
   const [rubros, setRubros] = useState<Rubro[]>([]);
   const [rubroId, setRubroId] = useState<number | null>(null);
   const [titulo, setTitulo] = useState("");
@@ -30,7 +30,7 @@ export default function NuevoPedido() {
     if (perfil && perfil.rol !== "cliente") router.replace("/panel");
   }, [perfil, router]);
 
-  if (cargando || !perfil) return (<><Encabezado /><Cargando /></>);
+  if (cargando || !perfil) return (<><Encabezado /><Cargando error={errorSesion} /></>);
 
   const publicar = async (e: React.FormEvent) => {
     e.preventDefault();

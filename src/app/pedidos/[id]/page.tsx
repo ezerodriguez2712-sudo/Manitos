@@ -29,7 +29,7 @@ interface Datos {
 
 export default function DetallePedido() {
   const { id } = useParams<{ id: string }>();
-  const { perfil, cargando } = useSesion();
+  const { perfil, cargando, error: errorSesion } = useSesion();
   const [d, setD] = useState<Datos | null>(null);
   const [noExiste, setNoExiste] = useState(false);
 
@@ -71,7 +71,7 @@ export default function DetallePedido() {
     cargar();
   }, [cargar]);
 
-  if (cargando || !perfil) return (<><Encabezado /><Cargando /></>);
+  if (cargando || !perfil) return (<><Encabezado /><Cargando error={errorSesion} /></>);
 
   return (
     <>
