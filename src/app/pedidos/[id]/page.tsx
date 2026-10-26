@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
+import { BarraInferior } from "@/components/BarraInferior";
+import { useAvisos } from "@/lib/useAvisos";
 import { Chat } from "@/components/Chat";
 import { useSesion } from "@/lib/useSesion";
 import { fotoUrl, supabase } from "@/lib/supabase";
@@ -32,6 +34,7 @@ export default function DetallePedido() {
   const { perfil, cargando, error: errorSesion } = useSesion();
   const [d, setD] = useState<Datos | null>(null);
   const [noExiste, setNoExiste] = useState(false);
+  const { total: totalAvisos } = useAvisos(!!perfil);
 
   const cargar = useCallback(async () => {
     if (!perfil) return;
@@ -65,6 +68,11 @@ export default function DetallePedido() {
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
     });
+    // Marca el pedido como visto para los avisos (si la base todavía no tiene la función, se ignora)
+    sb.rpc("marcar_visto", { p_pedido: Number(id) }).then(
+      () => {},
+      () => {}
+    );
   }, [id, perfil]);
 
   useEffect(() => {
@@ -76,7 +84,7 @@ export default function DetallePedido() {
   return (
     <>
       <Encabezado perfil={perfil} />
-      <main className="contenedor space-y-4 py-6">
+      <main className="contenedor space-y-4 pb-28 pt-6">
         <Link href="/panel" className="text-sm text-gris hover:text-tinta">
           ← Volver
         </Link>
@@ -95,6 +103,7 @@ export default function DetallePedido() {
           </>
         )}
       </main>
+      <BarraInferior perfil={perfil} avisos={totalAvisos} />
     </>
   );
 }
@@ -125,7 +134,7 @@ function FichaPedido({ d }: { d: Datos }) {
           {p.fotos.map((f) => (
             <a key={f} href={fotoUrl(f)} target="_blank" rel="noreferrer">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={fotoUrl(f)} alt="" className="h-24 w-24 rounded-xl object-cover" />
+              <img src={fotoUrl(f)} alt="Foto del problema" className="h-28 w-28 rounded-xl object-cover" />
             </a>
           ))}
         </div>
@@ -171,10 +180,13 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
             {d.presupuestos.map((pr, i) => (
               <li key={pr.id} className="tarjeta">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{pr.perfiles?.nombre}</p>
-                    <Estrellas {...d.reputaciones[pr.profesional_id]} />
-                  </div>
+                  <Link href={`/profesionales/${pr.profesional_id}`} className="flex min-w-0 items-center gap-2.5">
+                    <Avatar nombre={pr.perfiles?.nombre} foto={pr.perfiles?.foto} tam={44} />
+                    <span className="min-w-0">
+                      <span className="block truncate font-bold">{pr.perfiles?.nombre}</span>
+                      <Estrellas {...d.reputaciones[pr.profesional_id]} />
+                    </span>
+                  </Link>
                   <div className="text-right">
                     <p className="font-titulo text-2xl font-extrabold">{pesos(pr.monto)}</p>
                     {i === 0 && d.presupuestos.length > 1 && <span className="chip">Más económico</span>}
@@ -184,9 +196,9 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                   <p className="mt-2 text-sm">📅 Disponible desde el {fecha(pr.fecha_disponible)}</p>
                 )}
                 {pr.mensaje && <p className="mt-2 whitespace-pre-line text-sm text-gris">“{pr.mensaje}”</p>}
-                {pr.perfiles?.descripcion && (
-                  <p className="mt-2 text-xs text-gris">Sobre el profesional: {pr.perfiles.descripcion}</p>
-                )}
+                <Link href={`/profesionales/${pr.profesional_id}`} className="mt-2 inline-block text-sm font-semibold text-marca">
+                  Ver perfil y reseñas
+                </Link>
                 <button className={`${i === 0 ? "btn" : "btn-sec"} mt-3 w-full py-2.5`} disabled={ocupado} onClick={() => elegir(pr)}>
                   Elegir este presupuesto
                 </button>
@@ -203,7 +215,15 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
       </>
     );
 
-  if (p.estado === "cancelado") return null;
+  if (p.estado === "cancelado")
+    return (
+      <div className="tarjeta text-center">
+        <p className="font-semibold">Cancelaste este pedido.</p>
+        <Link href="/pedidos/nuevo" className="btn-cinta mt-3">
+          Publicar un pedido nuevo
+        </Link>
+      </div>
+    );
 
   const pro = elegido?.perfiles;
   const wa = whatsapp(d.telefonoContraparte, `Hola ${pro?.nombre}, te escribo por el trabajo "${p.titulo}" de Manitos.`);
@@ -212,11 +232,14 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
       {elegido && pro && (
         <section className="tarjeta border-marca">
           <p className="text-sm font-semibold text-marca">Elegiste a este profesional</p>
-          <div className="mt-1 flex items-center justify-between">
-            <div>
-              <p className="font-semibold">{pro.nombre}</p>
-              <Estrellas {...d.reputaciones[pro.id]} />
-            </div>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <Link href={`/profesionales/${pro.id}`} className="flex min-w-0 items-center gap-2.5">
+              <Avatar nombre={pro.nombre} foto={pro.foto} tam={44} />
+              <span className="min-w-0">
+                <span className="block truncate font-bold">{pro.nombre}</span>
+                <Estrellas {...d.reputaciones[pro.id]} />
+              </span>
+            </Link>
             <p className="font-titulo text-2xl font-extrabold">{pesos(elegido.monto)}</p>
           </div>
           {wa && (
@@ -233,6 +256,14 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           onClick={() => cambiarEstado("completado", "¿El trabajo ya está terminado?")}
         >
           ✅ Marcar trabajo como terminado
+        </button>
+      )}
+      {p.estado === "asignado" && (
+        <button
+          className="w-full py-2 text-sm text-gris hover:text-red-600"
+          onClick={() => cambiarEstado("cancelado", "¿Cancelar el trabajo? Avisale antes al profesional por el chat.")}
+        >
+          Cancelar el trabajo
         </button>
       )}
       {p.estado === "completado" && elegido && !d.yaCalifique && (
@@ -267,11 +298,27 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
         <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">
           ⏳ Esperando que el cliente elija. Te avisamos acá si te eligen.
         </p>
-        <button className="btn-sec mt-3 w-full py-2.5" onClick={() => setEditando(true)}>
-          Modificar presupuesto
-        </button>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button className="btn-sec py-2.5" onClick={() => setEditando(true)}>
+            Modificar
+          </button>
+          <button
+            className="btn-sec py-2.5 hover:border-red-300 hover:text-red-600"
+            onClick={async () => {
+              if (!confirm("¿Retirar tu presupuesto? El cliente ya no lo va a ver.")) return;
+              const { error } = await supabase().from("presupuestos").delete().eq("id", mio.id);
+              if (error) alert("No se pudo retirar: " + error.message);
+              recargar();
+            }}
+          >
+            Retirar
+          </button>
+        </div>
       </section>
     );
+
+  if (p.estado === "cancelado")
+    return <p className="tarjeta text-center text-gris">El cliente canceló este trabajo.</p>;
 
   // aceptado
   const wa = whatsapp(d.telefonoContraparte, `Hola ${d.cliente?.nombre}, soy ${yo.nombre} de Manitos, por el trabajo "${p.titulo}".`);
@@ -307,7 +354,7 @@ function FormPresupuesto({
   previo?: Presupuesto;
   alListo: () => void;
 }) {
-  const [monto, setMonto] = useState(previo ? String(previo.monto) : "");
+  const [monto, setMonto] = useState(previo ? String(Math.round(previo.monto)) : "");
   const [fechaDisp, setFechaDisp] = useState(previo?.fecha_disponible ?? "");
   const [mensaje, setMensaje] = useState(previo?.mensaje ?? "");
   const [error, setError] = useState("");
@@ -315,6 +362,7 @@ function FormPresupuesto({
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!Number(monto)) return setError("Poné el precio total del trabajo.");
     setEnviando(true);
     setError("");
     const fila = { monto: Number(monto), fecha_disponible: fechaDisp || null, mensaje: mensaje || null };
@@ -332,7 +380,17 @@ function FormPresupuesto({
       <h2 className="text-lg font-bold">{previo ? "Modificar presupuesto" : "Enviar presupuesto"}</h2>
       <div>
         <label className="etiqueta">Precio total ($)</label>
-        <input className="campo text-lg font-semibold" type="number" min={1} step="any" inputMode="numeric" required value={monto} onChange={(e) => setMonto(e.target.value)} />
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 font-titulo text-lg font-bold text-gris">$</span>
+          <input
+            className="campo pl-7 font-titulo text-xl font-bold"
+            inputMode="numeric"
+            required
+            placeholder="0"
+            value={monto ? Number(monto).toLocaleString("es-AR") : ""}
+            onChange={(e) => setMonto(e.target.value.replace(/\D/g, "").slice(0, 10))}
+          />
+        </div>
       </div>
       <div>
         <label className="etiqueta">¿Desde cuándo podés ir?</label>

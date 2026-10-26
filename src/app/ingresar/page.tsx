@@ -1,6 +1,7 @@
 "use client";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Encabezado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
 import type { Rol } from "@/lib/types";
@@ -126,6 +127,13 @@ function Formulario() {
         </div>
         )}
 
+        {modo === "registro" && (
+          <p className="text-xs text-gris">
+            Al crear tu cuenta aceptás los{" "}
+            <Link href="/terminos" className="underline">términos y condiciones</Link> y la{" "}
+            <Link href="/privacidad" className="underline">política de privacidad</Link>.
+          </p>
+        )}
         {error && <p className="aviso-error">{error}</p>}
         {info && <p className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{info}</p>}
 

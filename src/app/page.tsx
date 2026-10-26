@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Azulejo, Logo } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
+import { PieLegal } from "@/components/Legal";
 
 const RUBROS: [string, string][] = [
   ["Plomería", "🚰"],
@@ -127,6 +128,7 @@ export default function Inicio() {
             Ingresá
           </Link>
         </p>
+        <PieLegal />
       </main>
     </>
   );

@@ -6,6 +6,8 @@ export interface Perfil {
   rol: Rol;
   zona: string | null;
   descripcion: string | null;
+  zonas?: string[];
+  foto?: string | null;
 }
 
 export interface Rubro {
@@ -40,6 +42,7 @@ export interface Presupuesto {
   mensaje: string | null;
   estado: "enviado" | "aceptado" | "rechazado";
   creado_en: string;
+  respondido_en?: string | null;
   perfiles?: Perfil;
   pedidos?: Pedido;
 }
@@ -82,3 +85,9 @@ export const hace = (s: string) => {
   if (h < 24) return `hace ${h} h`;
   return `hace ${Math.round(h / 24)} d`;
 };
+
+export interface Aviso {
+  pedido_id: number;
+  novedades: number;
+  mensajes: number;
+}

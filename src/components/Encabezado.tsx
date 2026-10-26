@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { fotoUrl, supabase } from "@/lib/supabase";
 import type { Perfil } from "@/lib/types";
 
 export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
@@ -10,7 +10,6 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
     await supabase().auth.signOut();
     router.replace("/");
   };
-  const inicial = (perfil?.nombre?.trim()[0] || "?").toUpperCase();
   return (
     <header className="sticky top-0 z-10 bg-marca text-white">
       <div className="contenedor flex h-14 items-center justify-between">
@@ -24,9 +23,7 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
               href="/perfil"
               className="flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1 pr-3 font-semibold hover:bg-white/20"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-cinta text-xs font-bold text-tinta">
-                {inicial}
-              </span>
+              <Avatar nombre={perfil.nombre} foto={perfil.foto} tam={28} />
               {perfil.nombre?.split(" ")[0] || "Mi perfil"}
             </Link>
             <button onClick={salir} className="rounded-full px-3 py-1.5 text-white/75 hover:bg-white/10 hover:text-white">
@@ -143,4 +140,40 @@ export function whatsapp(tel: string | null, texto: string) {
   let n = tel.replace(/\D/g, "");
   if (!n.startsWith("54")) n = "549" + n.replace(/^0/, "");
   return `https://wa.me/${n}?text=${encodeURIComponent(texto)}`;
+}
+
+/** Foto de perfil, o la inicial si no tiene. */
+export function Avatar({
+  nombre,
+  foto,
+  tam = 40,
+  className = "",
+}: {
+  nombre?: string | null;
+  foto?: string | null;
+  tam?: number;
+  className?: string;
+}) {
+  const inicial = (nombre?.trim()[0] || "?").toUpperCase();
+  if (foto)
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={fotoUrl(foto)}
+        alt=""
+        width={tam}
+        height={tam}
+        className={`shrink-0 rounded-full object-cover ${className}`}
+        style={{ width: tam, height: tam }}
+      />
+    );
+  return (
+    <span
+      className={`grid shrink-0 place-items-center rounded-full bg-cinta font-titulo font-extrabold text-tinta ${className}`}
+      style={{ width: tam, height: tam, fontSize: tam * 0.42 }}
+      aria-hidden
+    >
+      {inicial}
+    </span>
+  );
 }

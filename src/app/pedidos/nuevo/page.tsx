@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
+import { CampoBarrio } from "@/components/Barrios";
+import { BarraInferior } from "@/components/BarraInferior";
+import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
+import { comprimir, rutaFoto } from "@/lib/imagen";
 import { supabase } from "@/lib/supabase";
 import type { Rubro } from "@/lib/types";
 
@@ -11,6 +15,7 @@ const MAX_FOTOS = 4;
 export default function NuevoPedido() {
   const router = useRouter();
   const { perfil, cargando, error: errorSesion } = useSesion();
+  const { total: totalAvisos } = useAvisos(!!perfil);
   const [rubros, setRubros] = useState<Rubro[]>([]);
   const [rubroId, setRubroId] = useState<number | null>(null);
   const [titulo, setTitulo] = useState("");
@@ -41,9 +46,8 @@ export default function NuevoPedido() {
 
     const rutas: string[] = [];
     for (const f of fotos) {
-      const ext = f.name.split(".").pop() || "jpg";
-      const ruta = `${perfil.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error } = await sb.storage.from("fotos").upload(ruta, f);
+      const ruta = rutaFoto(perfil.id, "pedido");
+      const { error } = await sb.storage.from("fotos").upload(ruta, await comprimir(f), { contentType: "image/jpeg" });
       if (!error) rutas.push(ruta);
     }
 
@@ -78,7 +82,7 @@ export default function NuevoPedido() {
   return (
     <>
       <Encabezado perfil={perfil} />
-      <main className="contenedor max-w-md py-6">
+      <main className="contenedor max-w-md pb-28 pt-6">
         <h1 className="titulo">¿Qué necesitás?</h1>
         <form onSubmit={publicar} className="mt-6 space-y-5">
           <div>
@@ -109,26 +113,46 @@ export default function NuevoPedido() {
             <textarea className="campo min-h-28" required placeholder="Qué pasa, desde cuándo, medidas, materiales…" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
           </div>
           <div>
-            <label className="etiqueta">Fotos (opcional, hasta {MAX_FOTOS})</label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="campo text-sm"
-              onChange={(e) => setFotos(Array.from(e.target.files ?? []).slice(0, MAX_FOTOS))}
-            />
-            {fotos.length > 0 && (
-              <div className="mt-2 flex gap-2">
-                {fotos.map((f, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={URL.createObjectURL(f)} alt="" className="h-16 w-16 rounded-lg object-cover" />
-                ))}
-              </div>
-            )}
+            <span className="etiqueta">Fotos (opcional, hasta {MAX_FOTOS})</span>
+            <p className="mb-2 text-xs text-gris">Las fotos ayudan a que te pasen un presupuesto más preciso.</p>
+            <div className="flex flex-wrap gap-2">
+              {fotos.map((f, i) => (
+                <div key={i} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={URL.createObjectURL(f)} alt="" className="h-20 w-20 rounded-xl object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setFotos(fotos.filter((_, j) => j !== i))}
+                    className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full bg-tinta text-xs text-white"
+                    aria-label="Quitar foto"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {fotos.length < MAX_FOTOS && (
+                <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris hover:border-marca hover:text-marca">
+                  <span>
+                    <span className="block text-2xl">📷</span>
+                    Agregar
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      setFotos([...fotos, ...Array.from(e.target.files ?? [])].slice(0, MAX_FOTOS));
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
           <div>
             <label className="etiqueta">Barrio</label>
-            <input className="campo" required placeholder="Ej: Alta Córdoba" value={zona} onChange={(e) => setZona(e.target.value)} />
+            <CampoBarrio valor={zona} onChange={setZona} requerido />
           </div>
           <div>
             <label className="etiqueta">Dirección (sólo la ve quien elijas)</label>
@@ -147,6 +171,7 @@ export default function NuevoPedido() {
           </button>
         </form>
       </main>
+      <BarraInferior perfil={perfil} avisos={totalAvisos} />
     </>
   );
 }
