@@ -19,7 +19,7 @@ Privacidad: la dirección y el teléfono sólo los ven el cliente y el profesion
 ## Puesta en marcha (una sola vez)
 
 ### 1. Supabase
-1. En tu proyecto de Supabase → **SQL Editor** → *New query* → pegá todo `supabase/schema.sql` → **Run**.
+1. En tu proyecto de Supabase → **SQL Editor** → *New query* → pegá todo `supabase/instalar.sql` (borra lo de versiones anteriores y crea todo de nuevo) → **Run**.
 2. **Project Settings → API**: copiá `Project URL` y la clave `anon public`.
 3. (Recomendado para probar) **Authentication → Sign In / Providers → Email**: desactivá *Confirm email* para no tener que confirmar cada cuenta de prueba. Activalo de nuevo antes de lanzar.
 

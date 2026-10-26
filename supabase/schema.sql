@@ -258,6 +258,21 @@ alter publication supabase_realtime add table public.mensajes;
 insert into storage.buckets (id, name, public) values ('fotos', 'fotos', true)
 on conflict (id) do nothing;
 
+drop policy if exists "fotos_subir" on storage.objects;
+drop policy if exists "fotos_ver" on storage.objects;
 create policy "fotos_subir" on storage.objects for insert to authenticated
   with check (bucket_id = 'fotos' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "fotos_ver" on storage.objects for select using (bucket_id = 'fotos');
+
+-- =====================================================================
+-- Usuarios que ya existían antes de este esquema: crearles perfil
+-- =====================================================================
+insert into public.perfiles (id, nombre, rol)
+select id, coalesce(raw_user_meta_data->>'nombre', ''),
+       case when raw_user_meta_data->>'rol' = 'profesional' then 'profesional' else 'cliente' end
+from auth.users
+on conflict (id) do nothing;
+
+insert into public.contactos (perfil_id, telefono)
+select id, coalesce(raw_user_meta_data->>'telefono', '') from auth.users
+on conflict (perfil_id) do nothing;
