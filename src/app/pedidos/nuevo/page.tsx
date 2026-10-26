@@ -47,24 +47,32 @@ export default function NuevoPedido() {
       if (!error) rutas.push(ruta);
     }
 
-    const { data, error } = await sb
+    // Se inserta sin pedir la fila de vuelta y después se busca, para no depender
+    // de que la regla de lectura vea el pedido en el mismo instante en que se crea.
+    const { error } = await sb.from("pedidos").insert({
+      cliente_id: perfil.id,
+      rubro_id: rubroId,
+      titulo,
+      descripcion,
+      zona,
+      urgencia: urgente ? "urgente" : "normal",
+      fotos: rutas,
+    });
+    if (error) {
+      setEnviando(false);
+      return setError("No se pudo publicar el pedido: " + error.message);
+    }
+    const { data: nuevo } = await sb
       .from("pedidos")
-      .insert({
-        cliente_id: perfil.id,
-        rubro_id: rubroId,
-        titulo,
-        descripcion,
-        zona,
-        urgencia: urgente ? "urgente" : "normal",
-        fotos: rutas,
-      })
       .select("id")
-      .single();
-    if (!error && direccion.trim())
-      await sb.from("pedido_direcciones").insert({ pedido_id: data.id, direccion: direccion.trim() });
+      .eq("cliente_id", perfil.id)
+      .order("creado_en", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (nuevo && direccion.trim())
+      await sb.from("pedido_direcciones").insert({ pedido_id: nuevo.id, direccion: direccion.trim() });
     setEnviando(false);
-    if (error) setError(error.message);
-    else router.replace(`/pedidos/${data.id}`);
+    router.replace(nuevo ? `/pedidos/${nuevo.id}` : "/panel");
   };
 
   return (
