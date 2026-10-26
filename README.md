@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Manitos
 
-## Getting Started
+Web app (instalable en el celular) para pedir servicios del hogar en Córdoba.
+El cliente publica un pedido, los profesionales del rubro le mandan presupuestos
+y el cliente **elige el que más le conviene**.
 
-First, run the development server:
+**Tecnología:** Next.js 15 + Tailwind · Supabase (base de datos, login, fotos, chat en tiempo real) · Vercel (hosting).
 
+## Cómo funciona
+
+1. **Cliente** publica el pedido: rubro, descripción, fotos, barrio, dirección y si es urgente.
+2. **Profesionales** de ese rubro lo ven en "Pedidos nuevos" y mandan presupuesto (precio, fecha, mensaje). Pueden modificarlo mientras el cliente no elija.
+3. **Cliente** compara (ordenados por precio, con calificaciones) y elige uno. El resto queda rechazado automáticamente.
+4. Recién ahí se habilitan: dirección exacta, teléfono/WhatsApp de ambos y el chat.
+5. Cliente marca el trabajo como terminado y **ambos se califican**.
+
+Privacidad: la dirección y el teléfono sólo los ven el cliente y el profesional elegido (controlado en la base de datos, no sólo en la pantalla).
+
+## Puesta en marcha (una sola vez)
+
+### 1. Supabase
+1. En tu proyecto de Supabase → **SQL Editor** → *New query* → pegá todo `supabase/schema.sql` → **Run**.
+2. **Project Settings → API**: copiá `Project URL` y la clave `anon public`.
+3. (Recomendado para probar) **Authentication → Sign In / Providers → Email**: desactivá *Confirm email* para no tener que confirmar cada cuenta de prueba. Activalo de nuevo antes de lanzar.
+
+### 2. Vercel
+1. *Add New → Project* → importá el repo `Manitos` de GitHub.
+2. En **Environment Variables** cargá:
+   - `NEXT_PUBLIC_SUPABASE_URL` = la Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = la clave anon public
+3. **Deploy**. Cada cambio que se suba al repo se publica solo.
+4. Copiá la URL que te da Vercel y en Supabase → **Authentication → URL Configuration** ponela como *Site URL*.
+
+### 3. Instalar en el celular
+Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
+
+## Desarrollo local
 ```bash
+cp .env.example .env.local   # y completá las dos claves
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estructura
+```
+supabase/schema.sql          Tablas, seguridad (RLS), funciones, fotos
+src/app/page.tsx             Portada
+src/app/ingresar             Login / registro (cliente o profesional)
+src/app/panel                Panel: mis pedidos (cliente) · pedidos nuevos y mis presupuestos (profesional)
+src/app/perfil               Datos, zona y rubros del profesional
+src/app/pedidos/nuevo        Publicar pedido
+src/app/pedidos/[id]         Detalle: enviar / comparar / elegir presupuesto, chat, calificar
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Próximas etapas
+- Notificaciones push a profesionales cuando entra un pedido de su rubro.
+- Filtro por zona/distancia.
+- Verificación de profesionales (DNI, matrícula).
+- Cobro con MercadoPago y comisión de la plataforma.
+- Empaquetar como app de Play Store / App Store.
