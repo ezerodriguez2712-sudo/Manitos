@@ -16,33 +16,49 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
       .order("creado_en")
       .then(({ data }) => setMensajes(data ?? []));
 
-    const canal = sb
-      .channel(`chat-${pedidoId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "mensajes", filter: `pedido_id=eq.${pedidoId}` },
-        (payload) =>
-          setMensajes((m) => (m.some((x) => x.id === payload.new.id) ? m : [...m, payload.new as Mensaje]))
-      )
-      .subscribe();
+    // Canal con nombre único por montaje: reutilizar uno ya suscripto hace fallar la librería.
+    let canal: ReturnType<typeof sb.channel> | null = null;
+    try {
+      canal = sb
+        .channel(`chat-${pedidoId}-${Math.random().toString(36).slice(2)}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "mensajes", filter: `pedido_id=eq.${pedidoId}` },
+          (payload) => {
+            const nuevo = payload.new as Mensaje | undefined;
+            if (!nuevo?.id) return;
+            setMensajes((m) => (m.some((x) => x.id === nuevo.id) ? m : [...m, nuevo]));
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn("Chat sin tiempo real:", e);
+    }
     return () => {
-      sb.removeChannel(canal);
+      if (canal) sb.removeChannel(canal).catch(() => {});
     };
   }, [pedidoId]);
 
-  useEffect(() => fin.current?.scrollIntoView({ behavior: "smooth" }), [mensajes.length]);
+  useEffect(() => {
+    fin.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [mensajes.length]);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     const t = texto.trim();
     if (!t) return;
     setTexto("");
-    const { data } = await supabase()
+    const { data, error } = await supabase()
       .from("mensajes")
       .insert({ pedido_id: pedidoId, autor_id: yo, texto: t })
       .select()
-      .single();
-    if (data) setMensajes((m) => (m.some((x) => x.id === data.id) ? m : [...m, data]));
+      .maybeSingle();
+    if (error) {
+      setTexto(t);
+      alert("No se pudo enviar el mensaje: " + error.message);
+      return;
+    }
+    if (data) setMensajes((m) => (m.some((x) => x.id === data.id) ? m : [...m, data as Mensaje]));
   };
 
   return (
