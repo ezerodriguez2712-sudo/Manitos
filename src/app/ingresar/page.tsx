@@ -8,7 +8,7 @@ import type { Rol } from "@/lib/types";
 function Formulario() {
   const params = useSearchParams();
   const router = useRouter();
-  const [modo, setModo] = useState<"ingreso" | "registro">(
+  const [modo, setModo] = useState<"ingreso" | "registro" | "recuperar">(
     params.get("modo") === "registro" ? "registro" : "ingreso"
   );
   const [rol, setRol] = useState<Rol>(params.get("rol") === "profesional" ? "profesional" : "cliente");
@@ -27,7 +27,13 @@ function Formulario() {
     setEnviando(true);
     try {
       const sb = supabase();
-      if (modo === "registro") {
+      if (modo === "recuperar") {
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/nueva-clave`,
+        });
+        if (error) setError(traducir(error.message));
+        else setInfo("Si ese email tiene una cuenta, te llegó un mail con un enlace para crear una contraseña nueva. Revisá también spam.");
+      } else if (modo === "registro") {
         const { data, error } = await sb.auth.signUp({
           email,
           password: clave,
@@ -50,7 +56,12 @@ function Formulario() {
 
   return (
     <main className="contenedor max-w-md py-8">
-      <h1 className="titulo">{modo === "registro" ? "Crear cuenta" : "Ingresar"}</h1>
+      <h1 className="titulo">
+        {modo === "registro" ? "Crear cuenta" : modo === "recuperar" ? "Recuperar contraseña" : "Ingresar"}
+      </h1>
+      {modo === "recuperar" && (
+        <p className="mt-2 text-sm text-gris">Poné tu email y te mandamos un enlace para elegir una contraseña nueva.</p>
+      )}
 
       <form onSubmit={enviar} className="mt-6 space-y-4">
         {modo === "registro" && (
@@ -90,8 +101,20 @@ function Formulario() {
           <label className="etiqueta">Email</label>
           <input className="campo" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
+        {modo !== "recuperar" && (
         <div>
-          <label className="etiqueta">Contraseña</label>
+          <div className="mb-1 flex items-center justify-between">
+            <label className="etiqueta mb-0">Contraseña</label>
+            {modo === "ingreso" && (
+              <button
+                type="button"
+                className="text-sm font-medium text-marca"
+                onClick={() => { setModo("recuperar"); setError(""); setInfo(""); }}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
+          </div>
           <input
             className="campo"
             type="password"
@@ -101,22 +124,29 @@ function Formulario() {
             onChange={(e) => setClave(e.target.value)}
           />
         </div>
+        )}
 
         {error && <p className="aviso-error">{error}</p>}
         {info && <p className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">{info}</p>}
 
         <button className="btn w-full" disabled={enviando}>
-          {enviando ? "Un momento…" : modo === "registro" ? "Crear cuenta" : "Ingresar"}
+          {enviando
+            ? "Un momento…"
+            : modo === "registro"
+              ? "Crear cuenta"
+              : modo === "recuperar"
+                ? "Enviarme el enlace"
+                : "Ingresar"}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gris">
-        {modo === "registro" ? "¿Ya tenés cuenta? " : "¿No tenés cuenta? "}
+        {modo === "registro" ? "¿Ya tenés cuenta? " : modo === "recuperar" ? "¿Te acordaste? " : "¿No tenés cuenta? "}
         <button
           className="font-semibold text-marca"
-          onClick={() => setModo(modo === "registro" ? "ingreso" : "registro")}
+          onClick={() => { setModo(modo === "ingreso" ? "registro" : "ingreso"); setError(""); setInfo(""); }}
         >
-          {modo === "registro" ? "Ingresá" : "Registrate"}
+          {modo === "ingreso" ? "Registrate" : "Ingresá"}
         </button>
       </p>
     </main>
@@ -128,6 +158,7 @@ function traducir(msg: string) {
   if (msg.includes("already registered")) return "Ese email ya tiene una cuenta. Probá ingresar.";
   if (msg.includes("Email not confirmed")) return "Todavía no confirmaste tu email. Revisá tu casilla.";
   if (msg.includes("Password should")) return "La contraseña debe tener al menos 6 caracteres.";
+  if (msg.includes("For security purposes")) return "Esperá un minuto antes de pedir otro enlace.";
   if (msg.includes("rate limit")) return "Se mandaron demasiados mails de confirmación. Esperá un rato o desactivá 'Confirm email' en Supabase.";
   if (msg.includes("Database error")) return "Error de la base de datos al crear la cuenta. Revisá que se haya ejecutado instalar.sql.";
   return msg;
