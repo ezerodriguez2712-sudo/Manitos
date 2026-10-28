@@ -29,6 +29,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState(false);
+  const [avisosMail, setAvisosMail] = useState(perfil.avisos_mail !== false);
   const archivo = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -182,6 +183,31 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
             <CampoBarrio valor={barrio} onChange={setBarrio} />
           </div>
         )}
+
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-borde bg-white p-3">
+          <span>
+            <b className="block">Avisos por mail</b>
+            <span className="text-sm text-gris">
+              {esPro
+                ? "Te avisamos cuando entra un pedido de tus rubros en tus zonas y cuando te eligen."
+                : "Te avisamos cuando te llega un presupuesto."}
+            </span>
+          </span>
+          <input
+            type="checkbox"
+            className="h-6 w-6 shrink-0 accent-marca"
+            checked={avisosMail}
+            onChange={async (e) => {
+              const v = e.target.checked;
+              setAvisosMail(v);
+              const { error } = await supabase().from("perfiles").update({ avisos_mail: v }).eq("id", perfil.id);
+              if (error) {
+                setAvisosMail(!v);
+                setError("No se pudo cambiar la preferencia de avisos.");
+              }
+            }}
+          />
+        </label>
 
         {error && <p className="aviso-error">{error}</p>}
         {ok && <p className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">Cambios guardados.</p>}

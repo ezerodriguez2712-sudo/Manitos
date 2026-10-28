@@ -8,6 +8,7 @@ export interface Perfil {
   descripcion: string | null;
   zonas?: string[];
   foto?: string | null;
+  avisos_mail?: boolean;
 }
 
 export interface Rubro {

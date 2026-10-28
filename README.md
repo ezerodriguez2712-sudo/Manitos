@@ -31,7 +31,19 @@ Privacidad: la dirección y el teléfono sólo los ven el cliente y el profesion
 3. **Deploy**. Cada cambio que se suba al repo se publica solo.
 4. Copiá la URL que te da Vercel y en Supabase → **Authentication → URL Configuration** ponela como *Site URL*.
 
-### 3. Instalar en el celular
+### 3. Avisos por mail (Brevo)
+1. Supabase → SQL Editor: ejecutá `supabase/migracion-03-avisos-mail.sql`. Al final muestra el **AVISOS_SECRETO**.
+2. Vercel → Settings → Environment Variables (Production), **no públicas**:
+   - `AVISOS_SECRETO` = el valor que mostró el SQL
+   - `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Project Settings → API Keys → `service_role` (secreta)
+   - `BREVO_SMTP_USUARIO` = Login de Brevo → SMTP y API → SMTP
+   - `BREVO_SMTP_CLAVE` = la clave SMTP de Brevo
+   - `MAIL_REMITENTE` = el email verificado como remitente en Brevo
+3. Redeploy.
+
+Se avisa: al profesional cuando entra un pedido de su rubro en sus zonas (o si no eligió zonas), al cliente cuando recibe un presupuesto y al profesional cuando lo eligen. Cada usuario puede apagar los avisos en su perfil.
+
+### 4. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local
