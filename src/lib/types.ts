@@ -36,6 +36,7 @@ export interface Pedido {
   presupuesto_elegido_id: number | null;
   creado_en: string;
   editado_en?: string | null;
+  terminado_pro_en?: string | null;
   vence_en?: string | null;
   rubros?: Rubro;
 }
@@ -132,3 +133,13 @@ export const tieneContacto = (t: string) =>
 /** Muestra los mensajes propios de la base (límites, reglas); si no, el texto genérico. */
 export const mensajeError = (e: { message?: string } | null | undefined, generico: string) =>
   e?.message && /^(Llegaste|Tenés|Estás|Sólo se puede|Tu cuenta)/.test(e.message) ? e.message : generico;
+
+export interface Respuesta {
+  perfil_id: string;
+  horas: number;
+  cantidad: number;
+}
+
+/** "Responde en menos de 1 hora" / "en unas 5 horas" / "en 2 días". */
+export const textoRespuesta = (h?: number | null) =>
+  h == null ? "" : h < 1 ? "menos de 1 hora" : h < 24 ? `unas ${Math.round(h)} hora${Math.round(h) === 1 ? "" : "s"}` : `${Math.round(h / 24)} día${Math.round(h / 24) === 1 ? "" : "s"}`;

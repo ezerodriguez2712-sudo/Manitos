@@ -7,6 +7,7 @@ import { PIE_AVISOS, plantillaMail } from "@/lib/mails";
  *  1. Consulta la base: así Supabase registra actividad y no pausa el proyecto gratuito.
  *  2. Vence los pedidos abiertos que pasaron los 15 días y le avisa al cliente.
  *  3. Le recuerda al cliente que tiene presupuestos esperando (una sola vez por pedido).
+ *  4. Da por terminados los trabajos que el profesional marcó hace más de 3 días.
  *
  * Si en Vercel está la variable CRON_SECRET, sólo responde a Vercel. Igual, correrla
  * de más no hace daño: cada pedido se vence y se recuerda una sola vez.
@@ -90,6 +91,10 @@ export async function GET(req: Request) {
       });
     }
   }
+
+  // 4) Trabajos marcados terminados por el profesional hace más de 3 días
+  const { data: completados, error: eC } = await sb.rpc("tarea_autocompletar");
+  resultado.autocompletados = eC ? `error: ${eC.message}` : ((completados ?? []) as number[]).length;
 
   if (mails.length) {
     try {

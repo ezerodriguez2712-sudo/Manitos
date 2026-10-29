@@ -64,7 +64,13 @@ Supabase → SQL Editor: ejecutá `supabase/migracion-08-limites-y-edicion.sql` 
 - **Editar pedido:** mientras recibe presupuestos, el cliente cambia título, detalle, fotos y urgencia. Los profesionales ven "Editado".
 - **Tarea diaria** (`vercel.json` → `/api/mantenimiento`, 10 h de Córdoba): consulta la base para que Supabase no pause el proyecto, vence los pedidos abiertos con más de 15 días (el cliente puede volver a publicarlos) y le recuerda al cliente que tiene presupuestos esperando. Opcional: variable `CRON_SECRET` en Vercel para que sólo Vercel pueda ejecutarla.
 
-### 7. Instalar en el celular
+### 7. Trabajo terminado, fotos de trabajos y tiempo de respuesta
+Supabase → SQL Editor: ejecutá `supabase/migracion-09-trabajos.sql` (después de la 08).
+- El profesional toca **Terminé el trabajo**; al cliente le llega un mail para confirmar (o avisar que falta algo). Si no responde en 3 días, la tarea diaria lo da por terminado.
+- El profesional sube hasta 12 fotos de trabajos anteriores desde su perfil; se ven en su perfil público.
+- Se muestra cuánto tarda en responder cada profesional (mediana de los últimos 6 meses, desde 2 presupuestos).
+
+### 8. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

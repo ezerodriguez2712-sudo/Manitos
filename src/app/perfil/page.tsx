@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, Estrellas, SelloVerificado } from "@/components/Encabezado";
 import { Verificacion } from "@/components/Verificacion";
+import { GaleriaTrabajos } from "@/components/GaleriaTrabajos";
 import { CampoBarrio, SelectorZonas } from "@/components/Barrios";
 import { BarraInferior } from "@/components/BarraInferior";
 import { PieLegal } from "@/components/Legal";
@@ -133,6 +134,11 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         </Link>
       )}
       {esPro && <Verificacion perfil={perfil} />}
+      {esPro && (
+        <div className="mt-3">
+          <GaleriaTrabajos profesionalId={perfil.id} editable />
+        </div>
+      )}
 
       <form onSubmit={guardar} className="mt-6 space-y-5">
         <div>

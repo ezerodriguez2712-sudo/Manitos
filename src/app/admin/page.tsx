@@ -695,6 +695,7 @@ const TIPO_AVISO: Record<string, string> = {
   pregunta: "Pregunta nueva → cliente",
   respuesta: "Respuesta → profesional",
   verificacion: "Verificación revisada → profesional",
+  terminado: "Trabajo terminado → cliente",
 };
 
 function ChequeoMails() {

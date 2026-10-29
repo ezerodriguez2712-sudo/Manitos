@@ -20,6 +20,8 @@ import {
   type Perfil,
   type Presupuesto,
   type Reputacion,
+  type Respuesta,
+  textoRespuesta,
 } from "@/lib/types";
 
 interface Datos {
@@ -27,6 +29,7 @@ interface Datos {
   cliente: Perfil | null;
   presupuestos: Presupuesto[];
   reputaciones: Record<string, Reputacion>;
+  respuestas: Record<string, Respuesta>;
   direccion: (Ubicacion & Partial<Vivienda>) | null;
   telefonoContraparte: string | null;
   yaCalifique: boolean;
@@ -53,7 +56,10 @@ export default function DetallePedido() {
     ]);
 
     const ids = [...new Set([pedido.cliente_id, ...(presupuestos ?? []).map((p) => p.profesional_id)])];
-    const { data: reps } = await sb.from("reputacion").select("*").in("perfil_id", ids);
+    const [{ data: reps }, { data: resp }] = await Promise.all([
+      sb.from("reputacion").select("*").in("perfil_id", ids),
+      sb.from("respuesta").select("*").in("perfil_id", ids),
+    ]);
 
     // Teléfono de la contraparte (la base sólo lo devuelve si el trabajo está asignado)
     const elegido = (presupuestos ?? []).find((x) => x.id === pedido.presupuesto_elegido_id);
@@ -67,6 +73,7 @@ export default function DetallePedido() {
       cliente,
       presupuestos: presupuestos ?? [],
       reputaciones: Object.fromEntries((reps ?? []).map((r) => [r.perfil_id, r])),
+      respuestas: Object.fromEntries((resp ?? []).map((r) => [r.perfil_id, r])),
       direccion: dir?.direccion ? { ...dir, texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
@@ -165,7 +172,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
   };
 
   const cambiarEstado = async (estado: "cancelado" | "completado", pregunta: string) => {
-    if (!confirm(pregunta)) return;
+    if (pregunta && !confirm(pregunta)) return;
     await supabase().from("pedidos").update({ estado }).eq("id", p.id);
     recargar();
   };
@@ -191,6 +198,9 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                       <span className="block truncate font-bold">{pr.perfiles?.nombre}</span>
                       {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
                       <Estrellas {...d.reputaciones[pr.profesional_id]} />
+                      {d.respuestas[pr.profesional_id] && (
+                        <span className="block text-xs text-gris">⚡ Responde en {textoRespuesta(d.respuestas[pr.profesional_id].horas)}</span>
+                      )}
                     </span>
                   </Link>
                   <div className="text-right">
@@ -259,8 +269,34 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           )}
         </section>
       )}
+      {p.estado === "asignado" && p.terminado_pro_en && (
+        <section className="tarjeta border-2 border-green-400 bg-green-50">
+          <p className="font-bold text-green-900">
+            🧰 {pro?.nombre?.split(" ")[0] ?? "El profesional"} marcó el trabajo como terminado {hace(p.terminado_pro_en)}.
+          </p>
+          <p className="mt-1 text-sm text-green-900">¿Quedó todo bien? Si no respondés en 3 días, lo damos por terminado.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button className="btn py-2.5" disabled={ocupado} onClick={() => cambiarEstado("completado", "")}>
+              ✅ Sí, está terminado
+            </button>
+            <button
+              className="btn-sec py-2.5"
+              disabled={ocupado}
+              onClick={async () => {
+                if (!confirm("¿Le avisamos que todavía falta algo? Contale qué por el chat.")) return;
+                setOcupado(true);
+                await supabase().rpc("cliente_falta_algo", { p_pedido: p.id });
+                setOcupado(false);
+                recargar();
+              }}
+            >
+              Falta algo
+            </button>
+          </div>
+        </section>
+      )}
       <Chat pedidoId={p.id} yo={yo.id} />
-      {p.estado === "asignado" && (
+      {p.estado === "asignado" && !p.terminado_pro_en && (
         <button
           className="btn w-full"
           onClick={() => cambiarEstado("completado", "¿El trabajo ya está terminado?")}
@@ -387,10 +423,38 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
         )}
       </section>
       <Chat pedidoId={p.id} yo={yo.id} />
+      {p.estado === "asignado" && <TerminarTrabajo pedido={p} recargar={recargar} />}
       {p.estado === "completado" && !d.yaCalifique && (
         <Calificar pedidoId={p.id} de={yo.id} para={p.cliente_id} nombre={d.cliente?.nombre ?? ""} alListo={recargar} />
       )}
     </>
+  );
+}
+
+function TerminarTrabajo({ pedido, recargar }: { pedido: Pedido; recargar: () => void }) {
+  const [ocupado, setOcupado] = useState(false);
+  if (pedido.terminado_pro_en)
+    return (
+      <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">
+        ✅ Le avisamos al cliente que terminaste ({hace(pedido.terminado_pro_en)}). Cuando confirme, se pueden calificar. Si
+        no responde en 3 días, lo damos por terminado.
+      </p>
+    );
+  return (
+    <button
+      className="btn w-full"
+      disabled={ocupado}
+      onClick={async () => {
+        if (!confirm("¿Terminaste el trabajo? Le vamos a pedir al cliente que lo confirme.")) return;
+        setOcupado(true);
+        const { error } = await supabase().rpc("profesional_termina", { p_pedido: pedido.id });
+        setOcupado(false);
+        if (error) alert(/profesional_termina|schema cache/.test(error.message) ? "Todavía no está disponible." : error.message);
+        recargar();
+      }}
+    >
+      ✅ Terminé el trabajo
+    </button>
   );
 }
 

@@ -37,7 +37,7 @@ const MINUTOS_VIGENCIA = 30; // sólo se avisan eventos de los últimos 30 minut
 const reciente = (fecha?: string | null) =>
   !!fecha && Date.now() - new Date(fecha).getTime() < MINUTOS_VIGENCIA * 60_000; // tope por pedido para cuidar el límite diario de Brevo
 
-const TIPOS = ["nuevo_pedido", "nuevo_presupuesto", "elegido", "pregunta", "respuesta", "verificacion"] as const;
+const TIPOS = ["nuevo_pedido", "nuevo_presupuesto", "elegido", "pregunta", "respuesta", "verificacion", "terminado"] as const;
 type Tipo = (typeof TIPOS)[number];
 
 export async function POST(req: Request) {
@@ -205,6 +205,32 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
           detalle: `Tu pregunta: "${recortar(q.texto, 200)}"\nRespuesta: "${recortar(q.respuesta ?? "", 300)}"`,
           boton: "Ver pedido y presupuestar",
           enlace: `${sitio}/pedidos/${ped.id}`,
+          pie: PIE_AVISOS,
+        }),
+      },
+    ];
+  }
+
+  if (tipo === "terminado") {
+    const { data: p } = await sb.from("pedidos").select("*").eq("id", id).maybeSingle();
+    if (!p || p.estado !== "asignado" || !reciente(p.terminado_pro_en)) return nota(notas, "el trabajo ya no está pendiente de confirmar");
+    const cliente = await perfilDe(sb, p.cliente_id);
+    if (!cliente || cliente.avisos_mail === false) return nota(notas, "el cliente tiene los avisos por mail apagados");
+    const email = await emailDe(sb, cliente.id, notas);
+    if (!email) return [];
+    const { data: pr } = await sb.from("presupuestos").select("profesional_id").eq("id", p.presupuesto_elegido_id).maybeSingle();
+    const pro = pr ? await perfilDe(sb, pr.profesional_id) : null;
+    return [
+      {
+        para: email,
+        nombre: cliente.nombre,
+        asunto: `¿Quedó bien? ${pro?.nombre ?? "El profesional"} terminó el trabajo`,
+        html: plantillaMail({
+          titulo: "El profesional marcó el trabajo como terminado",
+          texto: `${saludo(cliente.nombre)}, ${pro?.nombre ?? "el profesional"} avisó que terminó. Confirmalo y dejale una calificación: ayuda a otros vecinos a elegir. Si falta algo, avisale desde el pedido. Si no respondés en 3 días, lo damos por terminado.`,
+          detalle: p.titulo,
+          boton: "Confirmar y calificar",
+          enlace: `${sitio}/pedidos/${p.id}`,
           pie: PIE_AVISOS,
         }),
       },

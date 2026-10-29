@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, SelloVerificado } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
+import { GaleriaTrabajos } from "@/components/GaleriaTrabajos";
 import { useSesion } from "@/lib/useSesion";
 import { useAvisos } from "@/lib/useAvisos";
 import { supabase } from "@/lib/supabase";
-import { fecha, type Perfil, type Reputacion, type Rubro } from "@/lib/types";
+import { fecha, textoRespuesta, type Perfil, type Reputacion, type Respuesta, type Rubro } from "@/lib/types";
 
 interface Resena {
   id: number;
@@ -25,6 +26,7 @@ export default function PerfilProfesional() {
   const [pro, setPro] = useState<Perfil | null>(null);
   const [rubros, setRubros] = useState<Rubro[]>([]);
   const [rep, setRep] = useState<Reputacion | null>(null);
+  const [resp, setResp] = useState<Respuesta | null>(null);
   const [resenas, setResenas] = useState<Resena[]>([]);
   const [noExiste, setNoExiste] = useState(false);
 
@@ -35,7 +37,7 @@ export default function PerfilProfesional() {
       const { data: p } = await sb.from("perfiles").select("*").eq("id", id).maybeSingle();
       if (!p || p.rol !== "profesional") return setNoExiste(true);
       setPro(p);
-      const [{ data: r }, { data: re }, { data: c }] = await Promise.all([
+      const [{ data: r }, { data: re }, { data: c }, { data: rt }] = await Promise.all([
         sb.from("profesional_rubros").select("rubros(*)").eq("profesional_id", id),
         sb.from("reputacion").select("*").eq("perfil_id", id).maybeSingle(),
         sb
@@ -44,7 +46,9 @@ export default function PerfilProfesional() {
           .eq("para_id", id)
           .order("creado_en", { ascending: false })
           .limit(30),
+        sb.from("respuesta").select("*").eq("perfil_id", id).maybeSingle(),
       ]);
+      setResp(rt);
       setRubros(((r ?? []) as unknown as { rubros: Rubro }[]).map((x) => x.rubros).filter(Boolean));
       setRep(re);
       setResenas((c as unknown as Resena[]) ?? []);
@@ -91,10 +95,13 @@ export default function PerfilProfesional() {
                   ) : (
                     <span className="rounded-md bg-cinta/30 px-2 py-0.5 text-xs font-semibold">Nuevo en Manitos</span>
                   )}
+                  {resp && <span className="text-gris">⚡ Responde en {textoRespuesta(resp.horas)}</span>}
                 </div>
                 {pro.descripcion && <p className="mt-3 whitespace-pre-line text-gris">{pro.descripcion}</p>}
               </div>
             </section>
+
+            <GaleriaTrabajos profesionalId={pro.id} />
 
             {rubros.length > 0 && (
               <section className="tarjeta">
