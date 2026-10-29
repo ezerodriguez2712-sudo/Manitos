@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, SelloVerificado, whatsapp } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
@@ -14,6 +14,7 @@ import {
   ESTADO_LABEL,
   fecha,
   hace,
+  mensajeError,
   pesos,
   type Pedido,
   type Perfil,
@@ -124,6 +125,7 @@ function FichaPedido({ d }: { d: Datos }) {
             {p.urgencia === "urgente" && (
               <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">Urgente</span>
             )}
+            {p.editado_en && <span className="meta">✏️ Editado {hace(p.editado_en)}</span>}
           </div>
           <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-tight">{p.titulo}</h1>
           <p className="mt-1 text-sm text-gris">
@@ -210,24 +212,27 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
             ))}
           </ul>
         )}
-        <button
-          className="w-full py-2 text-sm text-gris hover:text-red-600"
-          onClick={() => cambiarEstado("cancelado", "¿Cancelar el pedido?")}
-        >
-          Cancelar pedido
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href={`/pedidos/${p.id}/editar`} className="btn-sec py-2.5 text-sm">
+            ✏️ Editar pedido
+          </Link>
+          <button
+            className="btn-sec py-2.5 text-sm hover:border-red-300 hover:text-red-600"
+            onClick={() => cambiarEstado("cancelado", "¿Cancelar el pedido?")}
+          >
+            Cancelar pedido
+          </button>
+        </div>
+        {p.vence_en && (
+          <p className="text-center text-xs text-gris">
+            El pedido recibe presupuestos hasta el {fecha(p.vence_en)}. Si no elegís ninguno, se cierra solo.
+          </p>
+        )}
       </>
     );
 
-  if (p.estado === "cancelado")
-    return (
-      <div className="tarjeta text-center">
-        <p className="font-semibold">Cancelaste este pedido.</p>
-        <Link href="/pedidos/nuevo" className="btn-cinta mt-3">
-          Publicar un pedido nuevo
-        </Link>
-      </div>
-    );
+  if (p.estado === "cancelado" || p.estado === "vencido")
+    return <Republicar pedido={p} />;
 
   const pro = elegido?.perfiles;
   const wa = whatsapp(d.telefonoContraparte, `Hola ${pro?.nombre}, te escribo por el trabajo "${p.titulo}" de Manitos.`);
@@ -278,6 +283,35 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
   );
 }
 
+/* ---------------- Pedido cancelado o vencido ---------------- */
+function Republicar({ pedido }: { pedido: Pedido }) {
+  const router = useRouter();
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
+  const republicar = async () => {
+    setOcupado(true);
+    setError("");
+    const { data, error } = await supabase().rpc("republicar_pedido", { p_pedido: pedido.id });
+    setOcupado(false);
+    if (error) return setError(mensajeError(error, "No se pudo volver a publicar: " + error.message));
+    router.push(`/pedidos/${data}`);
+  };
+  return (
+    <div className="tarjeta text-center">
+      <p className="font-semibold">
+        {pedido.estado === "vencido"
+          ? "Este pedido venció: pasaron 15 días sin que eligieras un presupuesto."
+          : "Cancelaste este pedido."}
+      </p>
+      <p className="mt-1 text-sm text-gris">Si todavía lo necesitás, publicalo de nuevo igual y les avisamos otra vez a los profesionales.</p>
+      <button onClick={republicar} disabled={ocupado} className="btn-cinta mt-3 w-full">
+        {ocupado ? "Publicando…" : "🔁 Volver a publicar"}
+      </button>
+      {error && <p className="aviso-error mt-2">{error}</p>}
+    </div>
+  );
+}
+
 /* ---------------- Vista del profesional ---------------- */
 function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () => void }) {
   const p = d.pedido;
@@ -293,9 +327,21 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
   if (mio.estado === "rechazado")
     return <p className="tarjeta text-center text-gris">El cliente eligió otro presupuesto. ¡Suerte con el próximo!</p>;
 
+  if (mio.estado === "enviado" && p.estado === "vencido")
+    return <p className="tarjeta text-center text-gris">El pedido venció sin que el cliente eligiera un presupuesto.</p>;
+  if (mio.estado === "enviado" && p.estado === "cancelado")
+    return <p className="tarjeta text-center text-gris">El cliente canceló este pedido.</p>;
+
+  const editadoDespues = !!p.editado_en && new Date(p.editado_en) > new Date(mio.creado_en);
+
   if (mio.estado === "enviado")
     return (
       <section className="tarjeta">
+        {editadoDespues && (
+          <p className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            ✏️ El cliente editó el pedido después de tu presupuesto. Revisá la descripción por si tenés que modificarlo.
+          </p>
+        )}
         <p className="text-sm font-semibold text-gris">Tu presupuesto</p>
         <p className="mt-1 font-titulo text-3xl font-extrabold">{pesos(mio.monto)}</p>
         {mio.fecha_disponible && <p className="text-sm">📅 Desde el {fecha(mio.fecha_disponible)}</p>}
@@ -376,7 +422,7 @@ function FormPresupuesto({
       ? await sb.from("presupuestos").update(fila).eq("id", previo.id)
       : await sb.from("presupuestos").insert({ ...fila, pedido_id: pedidoId, profesional_id: yo });
     setEnviando(false);
-    if (error) setError("No se pudo enviar. Puede que el pedido ya no esté disponible.");
+    if (error) setError(mensajeError(error, "No se pudo enviar. Puede que el pedido ya no esté disponible."));
     else alListo();
   };
 

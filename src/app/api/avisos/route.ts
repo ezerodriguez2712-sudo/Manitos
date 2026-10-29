@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import {
+  emailDe,
+  enviar,
+  env,
+  explicar,
+  pareceMail,
+  perfilDe,
+  recortar,
+  saludo,
+  urlSitio,
+  urlSupabase,
+  type Destinatario,
+  type Mail,
+} from "@/lib/correo";
 import { mismoBarrio } from "@/lib/barrios";
 import { PIE_AVISOS, plantillaMail } from "@/lib/mails";
 import { pesos } from "@/lib/types";
@@ -69,13 +83,6 @@ export async function POST(req: Request) {
     console.error("Aviso fallido", tipo, id, msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
-
-interface Mail {
-  para: string;
-  nombre?: string;
-  asunto: string;
-  html: string;
 }
 
 async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: string[]): Promise<Mail[]> {
@@ -260,115 +267,9 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
   ];
 }
 
-interface Destinatario {
-  id: string;
-  nombre: string;
-  rol: string;
-  zonas?: string[] | null;
-  avisos_mail?: boolean | null;
-  suspendido?: boolean | null;
-}
-
-async function perfilDe(sb: SupabaseClient, id: string) {
-  const { data } = await sb.from("perfiles").select("id, nombre, rol, zonas, avisos_mail").eq("id", id).maybeSingle();
-  return data as Destinatario | null;
-}
-
-async function emailDe(sb: SupabaseClient, id: string, notas?: string[]) {
-  const { data, error } = await sb.auth.admin.getUserById(id);
-  const u = data?.user;
-  if (!u?.email) {
-    notas?.push(`usuario sin email${error ? ": " + error.message : ""}`);
-    return null;
-  }
-  if (!u.email_confirmed_at) {
-    // sólo cuentas confirmadas
-    notas?.push(`${u.email} todavía no confirmó su cuenta`);
-    return null;
-  }
-  return u.email;
-}
-
 function nota(notas: string[], texto: string): Mail[] {
   notas.push(texto);
   return [];
-}
-
-const env = (k: string) => {
-  let v = (process.env[k] ?? "").trim().replace(/^["']|["']$/g, "").replace(new RegExp(`^${k}=`), "").trim();
-  // En direcciones de mail, un punto o coma al final (típico al copiar de una oración) las invalida
-  if (k === "BREVO_SMTP_USUARIO" || k === "MAIL_REMITENTE") v = v.replace(/[.,;:]+$/, "");
-  return v;
-};
-const pareceMail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-
-async function enviar(mails: Mail[]) {
-  if (!mails.length) return 0;
-  const transporte = nodemailer.createTransport({
-    host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
-    port: Number(process.env.BREVO_SMTP_PUERTO || 587),
-    secure: false,
-    auth: { user: env("BREVO_SMTP_USUARIO"), pass: env("BREVO_SMTP_CLAVE") },
-    // Nunca quedarse colgado esperando al servidor de correo
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
-  let ok = 0;
-  let primerError = "";
-  // De a 5 en paralelo para no saturar el SMTP
-  for (let i = 0; i < mails.length; i += 5) {
-    const tanda = await Promise.allSettled(
-      mails.slice(i, i + 5).map((m) =>
-        transporte.sendMail({
-          from: { name: "Manitos", address: env("MAIL_REMITENTE") },
-          to: m.nombre ? { name: m.nombre, address: m.para } : m.para,
-          subject: m.asunto,
-          html: m.html,
-        })
-      )
-    );
-    tanda.forEach((r) => {
-      if (r.status === "fulfilled") ok++;
-      else {
-        console.error("Mail fallido:", r.reason);
-        primerError ||= r.reason instanceof Error ? r.reason.message : String(r.reason);
-      }
-    });
-  }
-  if (ok === 0) throw new Error(`Brevo rechazó el envío: ${explicar(primerError)}`);
-  return ok;
-}
-
-function urlSupabase() {
-  let v = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim().replace(/^["']|["']$/g, "");
-  const panel = v.match(/supabase\.com\/dashboard\/project\/([a-z0-9]+)/i);
-  if (panel) return `https://${panel[1]}.supabase.co`;
-  if (!/^https?:\/\//i.test(v)) v = "https://" + v;
-  return v.replace(/\/+$/, "");
-}
-
-function urlSitio() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://manitos-ten.vercel.app").replace(/\/+$/, "");
-}
-
-const saludo = (n?: string | null) => {
-  const primero = n?.trim().split(/\s+/)[0];
-  return primero ? `Hola ${primero}` : "Hola";
-};
-const recortar = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
-
-/** Traduce los errores más comunes de Brevo a qué hay que revisar. */
-function explicar(msg: string) {
-  const m = msg || "error desconocido";
-  if (/535|auth|credentials|Invalid login/i.test(m))
-    return `${m} → revisá BREVO_SMTP_USUARIO (el "Login" de Brevo, ej. xxx@smtp-brevo.com) y BREVO_SMTP_CLAVE (la clave SMTP completa).`;
-  if (/sender|from|not valid|unauthorized/i.test(m))
-    return `${m} → MAIL_REMITENTE tiene que ser exactamente el email verificado como remitente en Brevo.`;
-  if (/not activated|account.*(suspend|block)|permanently/i.test(m))
-    return `${m} → la cuenta SMTP de Brevo no está activa: pedí la activación al soporte de Brevo.`;
-  if (/timeout|ETIMEDOUT|ECONNREFUSED|ENOTFOUND/i.test(m)) return `${m} → no se pudo conectar con Brevo.`;
-  return m;
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Mensaje } from "@/lib/types";
+import { mensajeError, type Mensaje } from "@/lib/types";
 
 export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
@@ -55,7 +55,7 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
       .maybeSingle();
     if (error) {
       setTexto(t);
-      alert("No se pudo enviar el mensaje: " + error.message);
+      alert(mensajeError(error, "No se pudo enviar el mensaje: " + error.message));
       return;
     }
     if (data) setMensajes((m) => (m.some((x) => x.id === data.id) ? m : [...m, data as Mensaje]));

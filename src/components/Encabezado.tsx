@@ -126,6 +126,7 @@ export function EstadoChip({ estado, label }: { estado: string; label: string })
     asignado: "bg-marca-suave text-marca-oscuro",
     completado: "bg-green-50 text-green-700",
     cancelado: "bg-gray-100 text-gray-500",
+    vencido: "bg-gray-100 text-gray-500",
     enviado: "bg-blue-50 text-blue-700",
     aceptado: "bg-green-50 text-green-700",
     rechazado: "bg-gray-100 text-gray-500",

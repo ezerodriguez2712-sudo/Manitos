@@ -74,7 +74,7 @@ function PanelCliente({ perfil, avisos }: { perfil: Perfil; avisos: Record<numbe
   }, [perfil.id]);
 
   const activos = pedidos?.filter((p) => p.estado === "abierto" || p.estado === "asignado") ?? [];
-  const cerrados = pedidos?.filter((p) => p.estado === "completado" || p.estado === "cancelado") ?? [];
+  const cerrados = pedidos?.filter((p) => p.estado === "completado" || p.estado === "cancelado" || p.estado === "vencido") ?? [];
   const lista = verCerrados ? cerrados : activos;
 
   return (
@@ -193,7 +193,7 @@ function PanelProfesional({ perfil, avisos }: { perfil: Perfil; avisos: Record<n
   const visibles = zonas.length && soloMisZonas ? enMisZonas : disponibles ?? [];
   const novedadesMios = (mios ?? []).reduce((s, p) => s + (avisos[p.pedido_id]?.novedades ?? 0) + (avisos[p.pedido_id]?.mensajes ?? 0), 0);
 
-  const activos = (mios ?? []).filter((p) => p.estado !== "rechazado" && p.pedidos?.estado !== "completado" && p.pedidos?.estado !== "cancelado");
+  const activos = (mios ?? []).filter((p) => p.estado !== "rechazado" && p.pedidos?.estado !== "completado" && p.pedidos?.estado !== "cancelado" && p.pedidos?.estado !== "vencido");
   const historial = (mios ?? []).filter((p) => !activos.includes(p));
 
   return (
@@ -304,7 +304,11 @@ function ListaMios({ lista, avisos }: { lista: Presupuesto[]; avisos: Record<num
       {lista.map((p) => {
         const estado =
           p.estado === "enviado"
-            ? ["enviado", "Esperando respuesta"]
+            ? p.pedidos?.estado === "vencido"
+              ? ["vencido", "Venció sin elegir"]
+              : p.pedidos?.estado === "cancelado"
+                ? ["cancelado", "Cancelado"]
+                : ["enviado", "Esperando respuesta"]
             : p.estado === "aceptado"
               ? p.pedidos?.estado === "completado"
                 ? ["completado", "Terminado"]

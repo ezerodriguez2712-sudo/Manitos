@@ -58,7 +58,13 @@ Supabase → SQL Editor: ejecutá `supabase/migracion-07-preguntas-y-verificacio
 - **Preguntas:** el profesional puede consultarle al cliente antes de presupuestar (hasta 3 por pedido, sin teléfonos ni mails). Las respuestas las ven todos los profesionales. Avisa por mail.
 - **Verificado:** el profesional sube DNI (y matrícula) desde su perfil; las fotos van a un depósito privado. Se aprueban o rechazan en Panel de administrador → Verificación y le llega un mail.
 
-### 6. Instalar en el celular
+### 6. Límites, editar pedido y tarea diaria
+Supabase → SQL Editor: ejecutá `supabase/migracion-08-limites-y-edicion.sql` (después de la 07).
+- **Límites por usuario:** 5 pedidos por día y 10 abiertos a la vez; 40 presupuestos y 30 preguntas por día; 120 mensajes por hora. Los administradores no tienen límite.
+- **Editar pedido:** mientras recibe presupuestos, el cliente cambia título, detalle, fotos y urgencia. Los profesionales ven "Editado".
+- **Tarea diaria** (`vercel.json` → `/api/mantenimiento`, 10 h de Córdoba): consulta la base para que Supabase no pause el proyecto, vence los pedidos abiertos con más de 15 días (el cliente puede volver a publicarlos) y le recuerda al cliente que tiene presupuestos esperando. Opcional: variable `CRON_SECRET` en Vercel para que sólo Vercel pueda ejecutarla.
+
+### 7. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

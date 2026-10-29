@@ -21,7 +21,7 @@ export interface Rubro {
   icono: string;
 }
 
-export type EstadoPedido = "abierto" | "asignado" | "completado" | "cancelado";
+export type EstadoPedido = "abierto" | "asignado" | "completado" | "cancelado" | "vencido";
 
 export interface Pedido {
   id: number;
@@ -35,6 +35,8 @@ export interface Pedido {
   estado: EstadoPedido;
   presupuesto_elegido_id: number | null;
   creado_en: string;
+  editado_en?: string | null;
+  vence_en?: string | null;
   rubros?: Rubro;
 }
 
@@ -71,6 +73,7 @@ export const ESTADO_LABEL: Record<EstadoPedido, string> = {
   asignado: "En curso",
   completado: "Terminado",
   cancelado: "Cancelado",
+  vencido: "Vencido",
 };
 
 export const pesos = (n: number) =>
@@ -125,3 +128,7 @@ export interface Verificacion {
 /** Teléfonos o mails dentro de un texto (no se permiten antes de elegir presupuesto). */
 export const tieneContacto = (t: string) =>
   /[0-9][0-9 .()-]{6,}[0-9]/.test(t) || /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(t);
+
+/** Muestra los mensajes propios de la base (límites, reglas); si no, el texto genérico. */
+export const mensajeError = (e: { message?: string } | null | undefined, generico: string) =>
+  e?.message && /^(Llegaste|Tenés|Estás|Sólo se puede|Tu cuenta)/.test(e.message) ? e.message : generico;
