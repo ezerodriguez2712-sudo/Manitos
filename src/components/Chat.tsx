@@ -1,10 +1,11 @@
 "use client";
-import { MessageSquare } from "lucide-react";
+import { Lock, MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { mensajeError, type Mensaje } from "@/lib/types";
 
-export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
+/** Chat del trabajo. Con `cerrado`, se pueden leer los mensajes pero no escribir. */
+export function Chat({ pedidoId, yo, cerrado }: { pedidoId: number; yo: string; cerrado?: string }) {
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [texto, setTexto] = useState("");
   const fin = useRef<HTMLDivElement>(null);
@@ -66,7 +67,9 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
     <div className="tarjeta p-0">
       <p className="flex items-center gap-2 border-b border-borde px-4 py-3 font-semibold"><MessageSquare className="ico text-gris" /> Chat</p>
       <div className="max-h-80 min-h-32 space-y-2 overflow-y-auto px-4 py-3">
-        {mensajes.length === 0 && <p className="text-center text-sm text-gris">Coordiná acá día y horario.</p>}
+        {mensajes.length === 0 && (
+          <p className="text-center text-sm text-gris">{cerrado ? "No hubo mensajes en este trabajo." : "Coordiná acá día y horario."}</p>
+        )}
         {mensajes.map((m) => (
           <div key={m.id} className={`flex ${m.autor_id === yo ? "justify-end" : "justify-start"}`}>
             <p
@@ -80,10 +83,16 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
         ))}
         <div ref={fin} />
       </div>
-      <form onSubmit={enviar} className="flex gap-2 border-t border-borde p-2">
-        <input className="campo py-2" placeholder="Escribí un mensaje…" value={texto} onChange={(e) => setTexto(e.target.value)} />
-        <button className="btn px-4 py-2">Enviar</button>
-      </form>
+      {cerrado ? (
+        <p className="flex items-center gap-2 border-t border-borde bg-fondo px-4 py-3 text-sm text-gris">
+          <Lock className="ico shrink-0" aria-hidden /> {cerrado}
+        </p>
+      ) : (
+        <form onSubmit={enviar} className="flex gap-2 border-t border-borde p-2">
+          <input className="campo py-2" placeholder="Escribí un mensaje…" value={texto} onChange={(e) => setTexto(e.target.value)} />
+          <button className="btn px-4 py-2">Enviar</button>
+        </form>
+      )}
     </div>
   );
 }

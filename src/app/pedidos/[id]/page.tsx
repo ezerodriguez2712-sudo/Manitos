@@ -296,7 +296,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           </div>
         </section>
       )}
-      <Chat pedidoId={p.id} yo={yo.id} />
+      <Chat pedidoId={p.id} yo={yo.id} cerrado={chatCerrado(p.estado)} />
       {p.estado === "asignado" && !p.terminado_pro_en && (
         <button
           className="btn w-full"
@@ -318,6 +318,13 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
       )}
     </>
   );
+}
+
+/** Mensaje del chat cuando el trabajo ya no está en curso (undefined = abierto). */
+function chatCerrado(estado: Pedido["estado"]) {
+  if (estado === "completado") return "El trabajo terminó y el chat se cerró. Si necesitás algo más, publicá un pedido nuevo.";
+  if (estado === "cancelado") return "El trabajo se canceló y el chat se cerró.";
+  return undefined;
 }
 
 /* ---------------- Pedido cancelado o vencido ---------------- */
@@ -423,7 +430,7 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
           </a>
         )}
       </section>
-      <Chat pedidoId={p.id} yo={yo.id} />
+      <Chat pedidoId={p.id} yo={yo.id} cerrado={chatCerrado(p.estado)} />
       {p.estado === "asignado" && <TerminarTrabajo pedido={p} recargar={recargar} />}
       {p.estado === "completado" && !d.yaCalifique && (
         <Calificar pedidoId={p.id} de={yo.id} para={p.cliente_id} nombre={d.cliente?.nombre ?? ""} alListo={recargar} />
