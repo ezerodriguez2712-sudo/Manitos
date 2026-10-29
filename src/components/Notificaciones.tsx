@@ -74,24 +74,20 @@ export function TarjetaNotificaciones({ esPro }: { esPro: boolean }) {
             ? "Te avisamos en el celular apenas entra un pedido de tu rubro. El primero que presupuesta tiene más chances."
             : "Te avisamos en el celular cuando te llega un presupuesto o un mensaje."}
         </p>
-        {estado === "instalar-ios" ? (
-          <PasosIOS />
-        ) : (
-          <button
-            className="btn mt-3 px-4 py-2 text-sm"
-            disabled={ocupado}
-            onClick={async () => {
-              setOcupado(true);
-              setError("");
-              const r = await activarPush().catch((e) => ({ estado: "inactivo" as EstadoPush, error: String(e) }));
-              setOcupado(false);
-              setEstado(r.estado);
-              if (r.error) setError(r.error);
-            }}
-          >
-            {ocupado ? "Activando…" : "Activar notificaciones"}
-          </button>
-        )}
+        <button
+          className="btn mt-3 px-4 py-2 text-sm"
+          disabled={ocupado}
+          onClick={async () => {
+            setOcupado(true);
+            setError("");
+            const r = await activarPush().catch((e) => ({ estado: "inactivo" as EstadoPush, error: String(e) }));
+            setOcupado(false);
+            setEstado(r.estado);
+            if (r.error) setError(r.error);
+          }}
+        >
+          {ocupado ? "Activando…" : "Activar notificaciones"}
+        </button>
         {error && <p className="aviso-error mt-2">{error}</p>}
       </div>
       <button onClick={ocultar} className="self-start text-gris hover:text-tinta" aria-label="Ocultar">
