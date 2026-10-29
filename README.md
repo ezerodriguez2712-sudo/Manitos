@@ -32,14 +32,15 @@ Privacidad: la dirección y el teléfono sólo los ven el cliente y el profesion
 4. Copiá la URL que te da Vercel y en Supabase → **Authentication → URL Configuration** ponela como *Site URL*.
 
 ### 3. Avisos por mail (Brevo)
-1. Supabase → SQL Editor: ejecutá `supabase/migracion-03-avisos-mail.sql`. Al final muestra el **AVISOS_SECRETO**.
+1. Supabase → SQL Editor: ejecutá `supabase/migracion-03-avisos-mail.sql`.
 2. Vercel → Settings → Environment Variables (Production), **no públicas**:
-   - `AVISOS_SECRETO` = el valor que mostró el SQL
    - `SUPABASE_SERVICE_ROLE_KEY` = Supabase → Project Settings → API Keys → `service_role` (secreta)
    - `BREVO_SMTP_USUARIO` = Login de Brevo → SMTP y API → SMTP
    - `BREVO_SMTP_CLAVE` = la clave SMTP de Brevo
    - `MAIL_REMITENTE` = el email verificado como remitente en Brevo
 3. Redeploy.
+
+Sólo se avisan eventos reales de los últimos 30 minutos y una sola vez cada uno, así que la dirección /api/avisos no necesita clave.
 
 Se avisa: al profesional cuando entra un pedido de su rubro en sus zonas (o si no eligió zonas), al cliente cuando recibe un presupuesto y al profesional cuando lo eligen. Cada usuario puede apagar los avisos en su perfil.
 

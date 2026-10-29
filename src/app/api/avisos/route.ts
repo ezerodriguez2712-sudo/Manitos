@@ -10,26 +10,24 @@ import { pesos } from "@/lib/types";
  * presupuesto elegido) y manda el mail correspondiente por Brevo.
  *
  * Variables de entorno (en Vercel, NO públicas):
- *   AVISOS_SECRETO, SUPABASE_SERVICE_ROLE_KEY, BREVO_SMTP_USUARIO, BREVO_SMTP_CLAVE, MAIL_REMITENTE
+ *   SUPABASE_SERVICE_ROLE_KEY, BREVO_SMTP_USUARIO, BREVO_SMTP_CLAVE, MAIL_REMITENTE
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const MAX_PROFESIONALES = 60; // tope por pedido para cuidar el límite diario de Brevo
+const MAX_PROFESIONALES = 60;
+const MINUTOS_VIGENCIA = 30; // sólo se avisan eventos de los últimos 30 minutos
+
+const reciente = (fecha?: string | null) =>
+  !!fecha && Date.now() - new Date(fecha).getTime() < MINUTOS_VIGENCIA * 60_000; // tope por pedido para cuidar el límite diario de Brevo
 
 type Tipo = "nuevo_pedido" | "nuevo_presupuesto" | "elegido";
 
 export async function POST(req: Request) {
-  const limpiar = (v?: string | null) => (v ?? "").trim().replace(/^["']|["']$/g, "").replace(/^AVISOS_SECRETO=/, "").trim();
-  const secreto = limpiar(process.env.AVISOS_SECRETO);
-  if (!secreto || limpiar(req.headers.get("x-manitos-secreto")) !== secreto) {
-    console.warn("Aviso rechazado: AVISOS_SECRETO de Vercel no coincide con el de la base", {
-      largoVercel: secreto.length,
-      largoBase: limpiar(req.headers.get("x-manitos-secreto")).length,
-    });
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  // Seguridad: no hace falta un secreto compartido. Sólo se avisa de eventos reales,
+  // recientes (últimos MINUTOS_VIGENCIA) y una sola vez cada uno (tabla avisos_enviados),
+  // así que llamar a esta dirección de afuera no permite mandar mails de más.
 
   let tipo: Tipo, id: number;
   try {
@@ -82,7 +80,7 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
 
   if (tipo === "nuevo_pedido") {
     const { data: p } = await sb.from("pedidos").select("*, rubros(nombre)").eq("id", id).maybeSingle();
-    if (!p || p.estado !== "abierto") return [];
+    if (!p || p.estado !== "abierto" || !reciente(p.creado_en)) return [];
     const { data: prs } = await sb
       .from("profesional_rubros")
       .select("profesional_id, perfiles(id, nombre, zonas, avisos_mail, rol)")
@@ -122,7 +120,7 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
       .select("*, perfiles(nombre), pedidos(id, titulo, cliente_id, estado)")
       .eq("id", id)
       .maybeSingle();
-    if (!pr?.pedidos || pr.pedidos.estado !== "abierto") return [];
+    if (!pr?.pedidos || pr.pedidos.estado !== "abierto" || !reciente(pr.creado_en)) return [];
     const cliente = await perfilDe(sb, pr.pedidos.cliente_id);
     if (!cliente || cliente.avisos_mail === false) return [];
     const email = await emailDe(sb, cliente.id);
@@ -150,7 +148,7 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
   const { data: p } = await sb.from("pedidos").select("*").eq("id", id).maybeSingle();
   if (!p?.presupuesto_elegido_id) return [];
   const { data: pr } = await sb.from("presupuestos").select("*").eq("id", p.presupuesto_elegido_id).maybeSingle();
-  if (!pr) return [];
+  if (!pr || !reciente(pr.respondido_en ?? pr.creado_en)) return [];
   const pro = await perfilDe(sb, pr.profesional_id);
   if (!pro || pro.avisos_mail === false) return [];
   const email = await emailDe(sb, pro.id);
