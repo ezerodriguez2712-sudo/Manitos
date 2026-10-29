@@ -12,7 +12,7 @@ export function PaginaLegal({ titulo, children }: { titulo: string; children: Re
             <span className="font-titulo text-xl font-extrabold tracking-tight">Manitos</span>
           </Link>
         </div>
-        <div className="cinta-metrica h-2" aria-hidden />
+        <div className="cinta-metrica h-1" aria-hidden />
       </header>
       <main className="contenedor py-8">
         <article className="tarjeta legal p-6">

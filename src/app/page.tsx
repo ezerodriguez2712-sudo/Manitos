@@ -39,15 +39,8 @@ export default function Inicio() {
 
   return (
     <>
-      {/* Portada azul con grilla de plano */}
-      <section
-        className="relative overflow-hidden bg-marca text-white"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgb(255 255 255 / .07) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 255 255 / .07) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      >
+      {/* Portada azul marino */}
+      <section className="relative overflow-hidden bg-marca text-white">
         <div className="contenedor flex items-center justify-between pt-5">
           <span className="flex items-center gap-2">
             <Logo />
@@ -80,7 +73,7 @@ export default function Inicio() {
           </div>
           <BotonInstalar className="mt-4 text-sm font-semibold text-white/85 underline underline-offset-4 hover:text-white" />
         </div>
-        <div className="cinta-metrica h-5" aria-hidden />
+        <div className="cinta-metrica h-2" aria-hidden />
       </section>
 
       <main className="contenedor py-10">

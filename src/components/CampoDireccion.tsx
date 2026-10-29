@@ -1,4 +1,5 @@
 "use client";
+import { LocateFixed, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { buscarDirecciones, direccionDe, linkMaps, type Sugerencia, type Ubicacion } from "@/lib/mapas";
 
@@ -111,7 +112,7 @@ export function CampoDireccion({
                 onClick={() => elegir(s)}
                 className="flex w-full items-start gap-2 px-3 py-2.5 text-left hover:bg-marca-suave"
               >
-                <span className="mt-0.5">📍</span>
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gris" aria-hidden />
                 <span>
                   <span className="block text-sm font-semibold">{s.texto}</span>
                   {s.detalle && <span className="block text-xs text-gris">{s.detalle}</span>}
@@ -124,7 +125,7 @@ export function CampoDireccion({
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <button type="button" onClick={usarMiUbicacion} disabled={ubicando} className="font-semibold text-marca disabled:opacity-60">
-          {ubicando ? "Buscando tu ubicación…" : "📍 Usar mi ubicación actual"}
+          {ubicando ? "Buscando tu ubicación…" : <span className="inline-flex items-center gap-1"><LocateFixed className="ico" /> Usar mi ubicación actual</span>}
         </button>
         {valor.texto.trim() && (
           <a href={linkMaps(valor, barrio)} target="_blank" rel="noreferrer" className="text-gris underline">

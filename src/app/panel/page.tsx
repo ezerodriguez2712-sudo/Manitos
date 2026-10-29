@@ -1,4 +1,5 @@
 "use client";
+import { ChartColumn, MapPin } from "lucide-react";
 import { GuiaBienvenida } from "@/components/GuiaBienvenida";
 import { TarjetaNotificaciones } from "@/components/Notificaciones";
 import { TarjetaInstalar } from "@/components/Instalar";
@@ -28,7 +29,7 @@ export default function Panel() {
         )}
         {perfil.es_admin && (
           <Link href="/admin" className="mb-4 flex items-center justify-between rounded-xl bg-tinta px-4 py-2.5 text-sm font-semibold text-white">
-            <span>📊 Panel de administrador</span>
+            <span className="flex items-center gap-2"><ChartColumn className="ico" /> Panel de administrador</span>
             <span aria-hidden>→</span>
           </Link>
         )}
@@ -268,7 +269,7 @@ function PanelProfesional({ perfil, avisos }: { perfil: Perfil; avisos: Record<n
                           {p.urgencia === "urgente" && (
                             <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">Urgente</span>
                           )}
-                          <span className="meta">📍 {p.zona}</span>
+                          <span className="meta"><MapPin className="ico" /> {p.zona}</span>
                           <span className="text-xs text-gris">{hace(p.creado_en)}</span>
                         </div>
                         <p className="mt-1 font-bold leading-snug">{p.titulo}</p>
@@ -328,7 +329,7 @@ function ListaMios({ lista, avisos }: { lista: Presupuesto[]; avisos: Record<num
                 <p className="font-bold leading-snug">{p.pedidos?.titulo}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <EstadoChip estado={estado[0]} label={estado[1]} />
-                  <span className="text-xs text-gris">📍 {p.pedidos?.zona}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gris"><MapPin className="ico" /> {p.pedidos?.zona}</span>
                 </div>
                 <p className="mt-1 text-sm">
                   Tu oferta: <b className="font-titulo">{pesos(p.monto)}</b>

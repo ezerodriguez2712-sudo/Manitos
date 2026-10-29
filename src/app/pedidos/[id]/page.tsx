@@ -1,4 +1,5 @@
 "use client";
+import { Building2, MessageCircle, CalendarDays, Check, CircleCheck, ClipboardCheck, Fence, Hourglass, House, PartyPopper, Pencil, RotateCcw, StickyNote, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -132,7 +133,7 @@ function FichaPedido({ d }: { d: Datos }) {
             {p.urgencia === "urgente" && (
               <span className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">Urgente</span>
             )}
-            {p.editado_en && <span className="meta">✏️ Editado {hace(p.editado_en)}</span>}
+            {p.editado_en && <span className="meta"><Pencil className="ico" /> Editado {hace(p.editado_en)}</span>}
           </div>
           <h1 className="mt-1.5 text-2xl font-extrabold leading-tight tracking-tight">{p.titulo}</h1>
           <p className="mt-1 text-sm text-gris">
@@ -185,7 +186,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
         </h2>
         {d.presupuestos.length === 0 ? (
           <p className="tarjeta text-center text-gris">
-            ⏳ Ya les avisamos a los profesionales del rubro. Los presupuestos van a aparecer acá.
+            <Hourglass className="ico mr-1" /> Ya les avisamos a los profesionales del rubro. Los presupuestos van a aparecer acá.
           </p>
         ) : (
           <ul className="space-y-3">
@@ -199,7 +200,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                       {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
                       <Estrellas {...d.reputaciones[pr.profesional_id]} />
                       {d.respuestas[pr.profesional_id] && (
-                        <span className="block text-xs text-gris">⚡ Responde en {textoRespuesta(d.respuestas[pr.profesional_id].horas)}</span>
+                        <span className="flex items-center gap-1 text-xs text-gris"><Zap className="ico" /> Responde en {textoRespuesta(d.respuestas[pr.profesional_id].horas)}</span>
                       )}
                     </span>
                   </Link>
@@ -209,7 +210,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                   </div>
                 </div>
                 {pr.fecha_disponible && (
-                  <p className="mt-2 text-sm">📅 Disponible desde el {fecha(pr.fecha_disponible)}</p>
+                  <p className="mt-2 flex items-center gap-1.5 text-sm"><CalendarDays className="ico text-gris" /> Disponible desde el {fecha(pr.fecha_disponible)}</p>
                 )}
                 {pr.mensaje && <p className="mt-2 whitespace-pre-line text-sm text-gris">“{pr.mensaje}”</p>}
                 <Link href={`/profesionales/${pr.profesional_id}`} className="mt-2 inline-block text-sm font-semibold text-marca">
@@ -224,7 +225,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
         )}
         <div className="grid grid-cols-2 gap-2">
           <Link href={`/pedidos/${p.id}/editar`} className="btn-sec py-2.5 text-sm">
-            ✏️ Editar pedido
+            <Pencil className="ico" /> Editar pedido
           </Link>
           <button
             className="btn-sec py-2.5 text-sm hover:border-red-300 hover:text-red-600"
@@ -264,7 +265,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           </div>
           {wa && (
             <a href={wa} target="_blank" rel="noreferrer" className="btn-sec mt-3 w-full py-2.5">
-              📱 Escribir por WhatsApp
+              <MessageCircle className="ico" /> Escribir por WhatsApp
             </a>
           )}
         </section>
@@ -272,12 +273,12 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
       {p.estado === "asignado" && p.terminado_pro_en && (
         <section className="tarjeta border-2 border-green-400 bg-green-50">
           <p className="font-bold text-green-900">
-            🧰 {pro?.nombre?.split(" ")[0] ?? "El profesional"} marcó el trabajo como terminado {hace(p.terminado_pro_en)}.
+            <ClipboardCheck className="ico mr-1" /> {pro?.nombre?.split(" ")[0] ?? "El profesional"} marcó el trabajo como terminado {hace(p.terminado_pro_en)}.
           </p>
           <p className="mt-1 text-sm text-green-900">¿Quedó todo bien? Si no respondés en 3 días, lo damos por terminado.</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button className="btn py-2.5" disabled={ocupado} onClick={() => cambiarEstado("completado", "")}>
-              ✅ Sí, está terminado
+              <Check className="ico" /> Sí, está terminado
             </button>
             <button
               className="btn-sec py-2.5"
@@ -301,7 +302,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           className="btn w-full"
           onClick={() => cambiarEstado("completado", "¿El trabajo ya está terminado?")}
         >
-          ✅ Marcar trabajo como terminado
+          <Check className="ico" /> Marcar trabajo como terminado
         </button>
       )}
       {p.estado === "asignado" && (
@@ -341,7 +342,7 @@ function Republicar({ pedido }: { pedido: Pedido }) {
       </p>
       <p className="mt-1 text-sm text-gris">Si todavía lo necesitás, publicalo de nuevo igual y les avisamos otra vez a los profesionales.</p>
       <button onClick={republicar} disabled={ocupado} className="btn-cinta mt-3 w-full">
-        {ocupado ? "Publicando…" : "🔁 Volver a publicar"}
+        {ocupado ? "Publicando…" : <><RotateCcw className="ico" /> Volver a publicar</>}
       </button>
       {error && <p className="aviso-error mt-2">{error}</p>}
     </div>
@@ -375,15 +376,15 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
       <section className="tarjeta">
         {editadoDespues && (
           <p className="mb-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            ✏️ El cliente editó el pedido después de tu presupuesto. Revisá la descripción por si tenés que modificarlo.
+            <Pencil className="ico mr-1" /> El cliente editó el pedido después de tu presupuesto. Revisá la descripción por si tenés que modificarlo.
           </p>
         )}
         <p className="text-sm font-semibold text-gris">Tu presupuesto</p>
         <p className="mt-1 font-titulo text-3xl font-extrabold">{pesos(mio.monto)}</p>
-        {mio.fecha_disponible && <p className="text-sm">📅 Desde el {fecha(mio.fecha_disponible)}</p>}
+        {mio.fecha_disponible && <p className="flex items-center gap-1.5 text-sm"><CalendarDays className="ico text-gris" /> Desde el {fecha(mio.fecha_disponible)}</p>}
         {mio.mensaje && <p className="mt-2 text-sm text-gris">“{mio.mensaje}”</p>}
         <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-700">
-          ⏳ Esperando que el cliente elija. Te avisamos acá si te eligen.
+          <Hourglass className="ico mr-1" /> Esperando que el cliente elija. Te avisamos acá si te eligen.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button className="btn-sec py-2.5" onClick={() => setEditando(true)}>
@@ -412,13 +413,13 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
   return (
     <>
       <section className="tarjeta border-green-300 bg-green-50">
-        <p className="font-bold text-green-800">🎉 ¡El cliente eligió tu presupuesto de {pesos(mio.monto)}!</p>
+        <p className="font-bold text-green-800"><PartyPopper className="ico mr-1" /> ¡El cliente eligió tu presupuesto de {pesos(mio.monto)}!</p>
         <p className="mt-1 text-sm">
           Cliente: <b>{d.cliente?.nombre}</b> <Estrellas {...d.reputaciones[p.cliente_id]} />
         </p>
         {wa && (
           <a href={wa} target="_blank" rel="noreferrer" className="btn-sec mt-3 w-full py-2.5">
-            📱 Escribir por WhatsApp
+            <MessageCircle className="ico" /> Escribir por WhatsApp
           </a>
         )}
       </section>
@@ -436,7 +437,7 @@ function TerminarTrabajo({ pedido, recargar }: { pedido: Pedido; recargar: () =>
   if (pedido.terminado_pro_en)
     return (
       <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-800">
-        ✅ Le avisamos al cliente que terminaste ({hace(pedido.terminado_pro_en)}). Cuando confirme, se pueden calificar. Si
+        <CircleCheck className="ico mr-1" /> Le avisamos al cliente que terminaste ({hace(pedido.terminado_pro_en)}). Cuando confirme, se pueden calificar. Si
         no responde en 3 días, lo damos por terminado.
       </p>
     );
@@ -453,7 +454,7 @@ function TerminarTrabajo({ pedido, recargar }: { pedido: Pedido; recargar: () =>
         recargar();
       }}
     >
-      ✅ Terminé el trabajo
+      <Check className="ico" /> Terminé el trabajo
     </button>
   );
 }
@@ -574,11 +575,11 @@ function MapaDireccion({ u, barrio }: { u: Ubicacion & Partial<Vivienda>; barrio
       />
       <div className="space-y-2 bg-fondo/60 p-3">
         <p className="text-sm">
-          {u.tipo === "departamento" ? "🏢" : u.tipo === "barrio_cerrado" ? "🏡" : "🏠"} <b>{u.texto}</b>
+          {u.tipo === "departamento" ? <Building2 className="ico text-gris" /> : u.tipo === "barrio_cerrado" ? <Fence className="ico text-gris" /> : <House className="ico text-gris" />} <b>{u.texto}</b>
           <span className="text-gris">, {barrio}</span>
         </p>
         {extra && <p className="text-sm font-semibold">{extra}</p>}
-        {u.referencias && <p className="text-sm text-gris">📝 {u.referencias}</p>}
+        {u.referencias && <p className="flex items-start gap-1.5 text-sm text-gris"><StickyNote className="ico mt-0.5" /> {u.referencias}</p>}
         <div className="grid grid-cols-2 gap-2">
           <a href={linkMaps(u, barrio)} target="_blank" rel="noreferrer" className="btn-sec py-2 text-sm">
             Ver en Maps

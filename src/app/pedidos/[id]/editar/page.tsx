@@ -1,4 +1,5 @@
 "use client";
+import { Camera } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -122,7 +123,7 @@ export default function EditarPedido() {
                 {cantidad < MAX_FOTOS && (
                   <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris hover:border-marca hover:text-marca">
                     <span>
-                      <span className="block text-2xl">📷</span>
+                      <Camera className="mx-auto mb-1 h-6 w-6" aria-hidden />
                       Agregar
                     </span>
                     <input

@@ -1,4 +1,5 @@
 "use client";
+import { Camera, ChartColumn } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -123,7 +124,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         >
           <Avatar nombre={nombre} foto={foto} tam={76} />
           <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-marca text-xs text-white">
-            {subiendo ? "…" : "📷"}
+            {subiendo ? "…" : <Camera className="h-3.5 w-3.5" aria-hidden />}
           </span>
         </button>
         <input ref={archivo} type="file" accept="image/*" hidden onChange={(e) => subirFoto(e.target.files?.[0])} />
@@ -242,7 +243,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
       </form>
       {perfil.es_admin && (
         <Link href="/admin" className="tarjeta mt-6 flex items-center justify-between font-semibold hover:border-marca">
-          <span>📊 Panel de administrador</span>
+          <span className="flex items-center gap-2"><ChartColumn className="ico" /> Panel de administrador</span>
           <span className="text-marca">→</span>
         </Link>
       )}

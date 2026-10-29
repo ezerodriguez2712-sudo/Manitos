@@ -1,4 +1,5 @@
 "use client";
+import { Bell, Share } from "lucide-react";
 import { useEffect, useState } from "react";
 import { escucharInstalacion } from "@/lib/instalar";
 import { activarPush, desactivarPush, estadoPush, registrarSW, type EstadoPush } from "@/lib/push-cliente";
@@ -33,7 +34,7 @@ function PasosIOS() {
   return (
     <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm">
       <li>
-        Tocá el botón <b>Compartir</b> <span aria-hidden>⬆️</span> de Safari.
+        Tocá el botón <b>Compartir</b> <Share className="ico" aria-hidden /> de Safari.
       </li>
       <li>
         Elegí <b>Agregar a pantalla de inicio</b>.
@@ -66,7 +67,7 @@ export function TarjetaNotificaciones({ esPro }: { esPro: boolean }) {
 
   return (
     <section className="tarjeta mt-4 flex gap-3 border-marca/30 bg-marca-suave">
-      <span className="text-3xl" aria-hidden>🔔</span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-marca ring-1 ring-borde" aria-hidden><Bell className="h-5 w-5" /></span>
       <div className="min-w-0 flex-1">
         <p className="font-bold">Enterate al instante</p>
         <p className="text-sm text-tinta/80">
@@ -107,7 +108,7 @@ export function FilaNotificaciones() {
   const texto: Record<EstadoPush, string> = {
     activo: "Activadas en este dispositivo.",
     inactivo: "Recibí avisos en el celular aunque no tengas la app abierta.",
-    bloqueado: "Las bloqueaste en el navegador. Habilitalas desde la configuración del sitio (el candado 🔒 al lado de la dirección).",
+    bloqueado: "Las bloqueaste en el navegador. Habilitalas desde la configuración del sitio (el candado al lado de la dirección).",
     "no-soportado": "Este navegador no permite notificaciones. Probá con Chrome.",
     "instalar-ios": "En iPhone primero tenés que agregar Manitos a la pantalla de inicio:",
   };

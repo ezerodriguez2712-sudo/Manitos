@@ -1,4 +1,5 @@
 "use client";
+import { Compass, Download, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Encabezado";
 import { esCelular, instalarAhora, modoInstalar, suscribir, type ModoInstalar } from "@/lib/instalar";
@@ -16,7 +17,7 @@ function useModo() {
 /** Ícono de "Compartir" de Safari (cuadrado con flecha hacia arriba). */
 function IconoCompartir() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1f4fd1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e3a6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M12 3v12M8 7l4-4 4 4" />
       <path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
     </svg>
@@ -24,7 +25,7 @@ function IconoCompartir() {
 }
 function IconoAgregar() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1f4fd1" strokeWidth="2" strokeLinecap="round" aria-hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e3a6b" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <rect x="4" y="4" width="16" height="16" rx="3" />
       <path d="M12 8v8M8 12h8" />
     </svg>
@@ -32,7 +33,7 @@ function IconoAgregar() {
 }
 function IconoMenu() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="#1f4fd1" aria-hidden>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="#1e3a6b" aria-hidden>
       <circle cx="12" cy="5" r="2" />
       <circle cx="12" cy="12" r="2" />
       <circle cx="12" cy="19" r="2" />
@@ -68,7 +69,7 @@ function Instrucciones({ modo, onCerrar }: { modo: ModoInstalar; onCerrar: () =>
               En iPhone sólo se puede instalar desde <b>Safari</b>.
             </p>
             <ol className="space-y-2">
-              <Paso n={1} icono={<span className="text-lg">🧭</span>}>
+              <Paso n={1} icono={<Compass className="h-5 w-5 text-marca" />}>
                 Abrí <b>manitos-ten.vercel.app</b> en Safari.
               </Paso>
               <Paso n={2} icono={<IconoCompartir />}>
@@ -96,7 +97,7 @@ function Instrucciones({ modo, onCerrar }: { modo: ModoInstalar; onCerrar: () =>
             <Paso n={1} icono={<IconoMenu />}>
               Tocá los <b>tres puntitos</b> arriba a la derecha de Chrome.
             </Paso>
-            <Paso n={2} icono={<span className="text-lg">📲</span>}>
+            <Paso n={2} icono={<Smartphone className="h-5 w-5 text-marca" />}>
               Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.
             </Paso>
             <Paso n={3} icono={<span className="text-sm font-bold text-marca">Instalar</span>}>
@@ -134,7 +135,7 @@ export function BotonInstalar({ className = "" }: { className?: string }) {
   return (
     <>
       <button type="button" onClick={instalar} className={className}>
-        📲 Instalar Manitos en el celular
+        <Download className="ico" /> Instalar Manitos en el celular
       </button>
       {ventana}
     </>
@@ -173,7 +174,7 @@ export function TarjetaInstalar() {
         <p className="font-bold leading-tight">Tené Manitos a mano</p>
         <p className="text-sm text-tinta/80">Instalala como app: un ícono en tu celular, sin buscar la página.</p>
         <button onClick={instalar} className="btn mt-2 px-4 py-2 text-sm">
-          📲 Instalar
+          <Download className="ico" /> Instalar
         </button>
       </div>
       <button onClick={ocultar} className="self-start text-gris hover:text-tinta" aria-label="Ocultar">

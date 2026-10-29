@@ -21,7 +21,7 @@ export function plantillaMail({
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#edf1f7;padding:24px 12px;">
     <tr><td align="center">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #d6deeb;">
-        <tr><td style="background:#1f4fd1;padding:18px 24px;">
+        <tr><td style="background:#1e3a6b;padding:18px 24px;">
           <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Manitos</span>
         </td></tr>
         <tr><td style="height:8px;background:#ffc21a;font-size:0;line-height:0;">&nbsp;</td></tr>

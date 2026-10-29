@@ -38,7 +38,7 @@ export function BarraInferior({ perfil, avisos = 0 }: { perfil: Perfil; avisos?:
                 }`}
               >
                 {destacado ? (
-                  <span className="-mt-5 grid h-12 w-12 place-items-center rounded-2xl bg-cinta text-tinta shadow-[0_3px_0_var(--color-cinta-oscuro)]">
+                  <span className="-mt-5 grid h-12 w-12 place-items-center rounded-full bg-marca text-white shadow-md ring-4 ring-white">
                     <Icono />
                   </span>
                 ) : (

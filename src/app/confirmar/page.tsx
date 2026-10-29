@@ -1,4 +1,5 @@
 "use client";
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -51,7 +52,7 @@ export default function Confirmar() {
           </>
         ) : (
           <div className="tarjeta text-center">
-            <p className="text-3xl">⚠️</p>
+            <TriangleAlert className="mx-auto h-10 w-10 text-amber-500" aria-hidden />
             <p className="mt-2 font-semibold">No pudimos confirmar la cuenta</p>
             <p className="mt-1 text-sm text-gris">{error}</p>
             <Link href="/ingresar" className="btn mt-4">

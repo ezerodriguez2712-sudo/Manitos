@@ -32,7 +32,7 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
           </nav>
         )}
       </div>
-      <div className="cinta-metrica h-2" aria-hidden />
+      <div className="cinta-metrica h-1" aria-hidden />
     </header>
   );
 }

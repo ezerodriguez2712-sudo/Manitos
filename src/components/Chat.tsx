@@ -1,4 +1,5 @@
 "use client";
+import { MessageSquare } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { mensajeError, type Mensaje } from "@/lib/types";
@@ -63,7 +64,7 @@ export function Chat({ pedidoId, yo }: { pedidoId: number; yo: string }) {
 
   return (
     <div className="tarjeta p-0">
-      <p className="border-b border-borde px-4 py-3 font-semibold">💬 Chat</p>
+      <p className="flex items-center gap-2 border-b border-borde px-4 py-3 font-semibold"><MessageSquare className="ico text-gris" /> Chat</p>
       <div className="max-h-80 min-h-32 space-y-2 overflow-y-auto px-4 py-3">
         {mensajes.length === 0 && <p className="text-center text-sm text-gris">Coordiná acá día y horario.</p>}
         {mensajes.map((m) => (

@@ -1,4 +1,5 @@
 "use client";
+import { MapPin, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, SelloVerificado } from "@/components/Encabezado";
@@ -75,7 +76,7 @@ export default function PerfilProfesional() {
           <>
             <section className="tarjeta overflow-hidden p-0">
               <div className="h-16 bg-marca" />
-              <div className="cinta-metrica h-2" aria-hidden />
+              <div className="cinta-metrica h-1" aria-hidden />
               <div className="-mt-12 px-4 pb-4">
                 <Avatar nombre={pro.nombre} foto={pro.foto} tam={88} className="border-4 border-white" />
                 <h1 className="mt-2 text-2xl font-extrabold leading-tight tracking-tight">{pro.nombre}</h1>
@@ -95,7 +96,7 @@ export default function PerfilProfesional() {
                   ) : (
                     <span className="rounded-md bg-cinta/30 px-2 py-0.5 text-xs font-semibold">Nuevo en Manitos</span>
                   )}
-                  {resp && <span className="text-gris">⚡ Responde en {textoRespuesta(resp.horas)}</span>}
+                  {resp && <span className="inline-flex items-center gap-1 text-gris"><Zap className="ico" /> Responde en {textoRespuesta(resp.horas)}</span>}
                 </div>
                 {pro.descripcion && <p className="mt-3 whitespace-pre-line text-gris">{pro.descripcion}</p>}
               </div>
@@ -122,7 +123,7 @@ export default function PerfilProfesional() {
                 <h2 className="font-bold">Zonas donde trabaja</h2>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {zonas.map((z) => (
-                    <span key={z} className="meta text-sm">📍 {z}</span>
+                    <span key={z} className="meta text-sm"><MapPin className="ico" /> {z}</span>
                   ))}
                 </div>
               </section>

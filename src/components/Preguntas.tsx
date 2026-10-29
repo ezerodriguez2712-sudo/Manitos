@@ -1,4 +1,5 @@
 "use client";
+import { Hourglass } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Avatar, SelloVerificado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
@@ -193,7 +194,7 @@ function ItemPregunta({
           ) : (
             !q.respuesta && (
               <p className="mt-1 text-xs text-gris">
-                ⏳ Esperando respuesta del cliente
+                <Hourglass className="ico mr-1" />Esperando respuesta del cliente
                 {mia && abierto && (
                   <button onClick={borrar} className="ml-2 font-semibold text-gris underline hover:text-red-600">Borrar</button>
                 )}

@@ -1,4 +1,5 @@
 "use client";
+import { Check, CircleCheck, CircleX, House, TriangleAlert, Wrench, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
@@ -196,7 +197,7 @@ function Indicadores() {
           {r.zonas_sin_respuesta?.length ? (
             <ListaBarras items={r.zonas_sin_respuesta.map((z) => ({ texto: z.zona, valor: z.pedidos }))} />
           ) : (
-            <p className="mt-4 rounded-xl bg-fondo p-3 text-sm text-gris">Todos los pedidos recibieron al menos un presupuesto. 👏</p>
+            <p className="mt-4 rounded-xl bg-fondo p-3 text-sm text-gris">Todos los pedidos recibieron al menos un presupuesto.</p>
           )}
         </section>
       </div>
@@ -289,7 +290,7 @@ function RubrosTabla({ rubros }: { rubros: Resumen["rubros"] }) {
               <td className="py-2 text-right tabular-nums">{r.pedidos}</td>
               <td className={`py-2 text-right tabular-nums ${r.sin_presu ? "font-bold text-amber-700" : ""}`}>{r.sin_presu}</td>
               <td className={`py-2 text-right tabular-nums ${r.profesionales === 0 && r.pedidos > 0 ? "font-bold text-red-700" : ""}`}>
-                {r.profesionales === 0 && r.pedidos > 0 ? "⚠ 0" : r.profesionales}
+                {r.profesionales === 0 && r.pedidos > 0 ? (<span className="inline-flex items-center gap-1"><TriangleAlert className="ico" aria-label="Sin profesionales" />0</span>) : r.profesionales}
               </td>
             </tr>
           ))}
@@ -399,7 +400,7 @@ function Usuarios({ miId }: { miId: string }) {
                     ) : (
                       <span>{u.nombre || "(sin nombre)"}</span>
                     )}
-                    <span className="meta">{u.rol === "profesional" ? "🔧 Profesional" : "🏠 Cliente"}</span>
+                    <span className="meta">{u.rol === "profesional" ? <><Wrench className="ico" /> Profesional</> : <><House className="ico" /> Cliente</>}</span>
                     {u.es_admin && <span className="chip">Admin</span>}
                     {u.suspendido && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">Suspendido</span>}
                     {!u.confirmado && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Sin confirmar mail</span>}
@@ -478,7 +479,7 @@ function Pedidos() {
                 <span className="text-2xl" aria-hidden>{p.icono}</span>
                 <div className="min-w-0 flex-1">
                   <button onClick={() => setAbierto(abierto === p.id ? null : p.id)} className="text-left font-semibold hover:underline">
-                    {p.urgencia === "urgente" && <span className="mr-1 text-red-600">⚡</span>}
+                    {p.urgencia === "urgente" && <Zap className="ico mr-1 text-red-600" aria-label="Urgente" />}
                     {p.titulo}
                   </button>
                   <p className="text-xs text-gris">
@@ -544,7 +545,7 @@ function Verificaciones({ alCambiar }: { alCambiar: () => void }) {
         !error && <Esqueleto />
       ) : !lista.length ? (
         <p className="mt-4 rounded-xl bg-white p-4 text-sm text-gris">
-          {estado === "pendiente" ? "No hay verificaciones para revisar. 👌" : "No hay verificaciones con ese estado."}
+          {estado === "pendiente" ? "No hay verificaciones para revisar." : "No hay verificaciones con ese estado."}
         </p>
       ) : (
         <ul className="mt-3 space-y-3">
@@ -600,7 +601,7 @@ function TarjetaVerificacion({ v, alListo }: { v: VerifAdmin; alListo: () => voi
         <div>
           <Link href={`/profesionales/${v.perfil_id}`} className="font-bold hover:underline">{v.nombre || "(sin nombre)"}</Link>
           <p className="text-sm text-gris">{v.email}{v.zona ? ` · ${v.zona}` : ""}</p>
-          {v.rubros && <p className="text-xs text-gris">🔧 {v.rubros}</p>}
+          {v.rubros && <p className="flex items-center gap-1 text-xs text-gris"><Wrench className="ico" /> {v.rubros}</p>}
         </div>
         <p className="text-xs text-gris">Enviado {hace(v.enviado_en)}</p>
       </div>
@@ -656,7 +657,7 @@ function TarjetaVerificacion({ v, alListo }: { v: VerifAdmin; alListo: () => voi
             )}
             <div className="flex gap-2">
               <button onClick={() => revisar(true)} disabled={ocupado} className="btn flex-1 py-2.5">
-                ✓ Aprobar
+                <Check className="ico" /> Aprobar
               </button>
               <button onClick={() => setRechazando(true)} className="btn-sec">Rechazar…</button>
             </div>
@@ -734,7 +735,7 @@ function ChequeoMails() {
         ) : (
           <>
             <p className={`mt-3 rounded-xl px-3 py-2 text-sm font-semibold ${c.brevoOk ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
-              {c.brevoOk ? "✅ " : "❌ "}
+              {c.brevoOk ? <CircleCheck className="ico mr-1" /> : <CircleX className="ico mr-1" />}
               {c.brevo}
             </p>
             <dl className="mt-3 space-y-1 text-sm">

@@ -1,10 +1,12 @@
 "use client";
+import { Building2, Fence, House } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { TipoVivienda, Vivienda } from "@/lib/mapas";
 
-const TIPOS: { valor: TipoVivienda; texto: string; icono: string }[] = [
-  { valor: "casa", texto: "Casa", icono: "🏠" },
-  { valor: "departamento", texto: "Departamento", icono: "🏢" },
-  { valor: "barrio_cerrado", texto: "Barrio cerrado", icono: "🏡" },
+const TIPOS: { valor: TipoVivienda; texto: string; icono: LucideIcon }[] = [
+  { valor: "casa", texto: "Casa", icono: House },
+  { valor: "departamento", texto: "Departamento", icono: Building2 },
+  { valor: "barrio_cerrado", texto: "Barrio cerrado", icono: Fence },
 ];
 
 /** Tipo de vivienda y datos para llegar: piso/depto, o barrio cerrado/manzana/lote, más indicaciones. */
@@ -24,7 +26,7 @@ export function CamposVivienda({ valor, onChange }: { valor: Vivienda; onChange:
               valor.tipo === t.valor ? "border-marca bg-marca-suave" : "border-transparent bg-white"
             }`}
           >
-            <span className="block text-lg">{t.icono}</span>
+            <t.icono className="mx-auto mb-1 h-5 w-5" aria-hidden />
             {t.texto}
           </button>
         ))}

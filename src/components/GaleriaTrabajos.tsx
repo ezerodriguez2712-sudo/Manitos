@@ -1,4 +1,5 @@
 "use client";
+import { Camera } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { comprimir, rutaFoto } from "@/lib/imagen";
 import { fotoUrl, supabase } from "@/lib/supabase";
@@ -111,7 +112,7 @@ export function GaleriaTrabajos({ profesionalId, editable = false }: { profesion
         <div className="mt-3">
           {!nueva ? (
             <label className="btn-sec w-full cursor-pointer py-2.5 text-sm">
-              📷 Agregar foto de un trabajo
+              <Camera className="ico" /> Agregar foto de un trabajo
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => { setNueva(e.target.files?.[0] ?? null); e.target.value = ""; }} />
             </label>
           ) : (

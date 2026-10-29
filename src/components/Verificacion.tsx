@@ -1,4 +1,5 @@
 "use client";
+import { Hourglass, IdCard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SelloVerificado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
@@ -36,7 +37,7 @@ export function Verificacion({ perfil }: { perfil: Perfil }) {
   if (v?.estado === "pendiente" && !abierto)
     return (
       <section id="verificacion" className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-        <b>⏳ Estamos revisando tus documentos.</b> Los enviaste {hace(v.enviado_en)}. Te avisamos por mail cuando esté listo
+        <b><Hourglass className="ico mr-1" />Estamos revisando tus documentos.</b> Los enviaste {hace(v.enviado_en)}. Te avisamos por mail cuando esté listo
         (normalmente en menos de 48 horas).
       </section>
     );
@@ -182,7 +183,7 @@ function CampoFoto({ etiqueta, archivo, onChange }: { etiqueta: string; archivo:
           <img src={vista} alt={etiqueta} className="h-full w-full object-cover" />
         ) : (
           <span>
-            <span className="block text-2xl">🪪</span>
+            <IdCard className="mx-auto mb-1 h-7 w-7" aria-hidden />
             Sacar o subir foto
           </span>
         )}
