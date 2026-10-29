@@ -16,11 +16,12 @@ export interface Destinatario {
   rol: string;
   zonas?: string[] | null;
   avisos_mail?: boolean | null;
+  avisos_push?: boolean | null;
   suspendido?: boolean | null;
 }
 
 export async function perfilDe(sb: SupabaseClient, id: string) {
-  const { data } = await sb.from("perfiles").select("id, nombre, rol, zonas, avisos_mail").eq("id", id).maybeSingle();
+  const { data } = await sb.from("perfiles").select("*").eq("id", id).maybeSingle();
   return data as Destinatario | null;
 }
 

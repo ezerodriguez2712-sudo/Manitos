@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/figtree";
 import "./globals.css";
+import { RegistrarSW } from "@/components/Notificaciones";
 
 export const metadata: Metadata = {
   title: "Manitos · Profesionales para tu casa",
@@ -28,7 +29,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es-AR">
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">
+        <RegistrarSW />
+        {children}
+      </body>
     </html>
   );
 }

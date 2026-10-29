@@ -686,6 +686,7 @@ interface Chequeo {
   brevo: string;
   variables: Record<string, string>;
   ultimos: { tipo: string; ref_id: number; enviado_en: string }[];
+  celulares?: number;
   error?: string;
 }
 const TIPO_AVISO: Record<string, string> = {
@@ -696,6 +697,7 @@ const TIPO_AVISO: Record<string, string> = {
   respuesta: "Respuesta → profesional",
   verificacion: "Verificación revisada → profesional",
   terminado: "Trabajo terminado → cliente",
+  mensaje: "Mensaje del chat (push)",
 };
 
 function ChequeoMails() {
@@ -761,7 +763,10 @@ function ChequeoMails() {
           ) : (
             <p className="mt-2 text-sm text-gris">Todavía no se mandó ningún aviso.</p>
           )}
-          <p className="mt-3 text-xs text-gris">Plan gratis de Brevo: hasta 300 mails por día.</p>
+          <p className="mt-3 text-xs text-gris">
+            Plan gratis de Brevo: hasta 300 mails por día.
+            {c.celulares != null && ` · ${c.celulares} celular${c.celulares === 1 ? "" : "es"} con notificaciones activadas.`}
+          </p>
         </section>
       )}
     </div>

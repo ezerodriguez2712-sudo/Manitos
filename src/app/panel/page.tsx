@@ -1,4 +1,6 @@
 "use client";
+import { GuiaBienvenida } from "@/components/GuiaBienvenida";
+import { TarjetaNotificaciones } from "@/components/Notificaciones";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Azulejo, Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
@@ -88,6 +90,7 @@ function PanelCliente({ perfil, avisos }: { perfil: Perfil; avisos: Record<numbe
           + Nuevo pedido
         </Link>
       </div>
+      {!!pedidos?.length && <TarjetaNotificaciones esPro={false} />}
 
       {!pedidos ? (
         <ListaCargando />
@@ -200,15 +203,13 @@ function PanelProfesional({ perfil, avisos }: { perfil: Perfil; avisos: Record<n
     <>
       <h1 className="titulo">Hola, {perfil.nombre.split(" ")[0] || "crack"}</h1>
       <p className="text-sm text-gris">Pedidos de tus rubros esperando presupuesto.</p>
-      {!tieneRubros || zonas.length === 0 ? (
-        <Link href="/perfil" className="mt-4 block rounded-xl border-2 border-dashed border-cinta-oscuro bg-cinta/20 p-3 text-sm">
-          {!tieneRubros ? (
-            <><b>Elegí tus rubros</b> en tu perfil para empezar a ver pedidos.</>
-          ) : (
-            <><b>Elegí tus zonas</b> para ver primero los pedidos cerca tuyo.</>
-          )}
+      {!tieneRubros && (
+        <Link href="/perfil#rubros" className="mt-4 block rounded-xl border-2 border-dashed border-cinta-oscuro bg-cinta/20 p-3 text-sm">
+          <b>Elegí tus rubros</b> en tu perfil para empezar a ver pedidos.
         </Link>
-      ) : null}
+      )}
+      <GuiaBienvenida perfil={perfil} />
+      <TarjetaNotificaciones esPro />
 
       <Pestanas
         opciones={[

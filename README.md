@@ -70,7 +70,14 @@ Supabase → SQL Editor: ejecutá `supabase/migracion-09-trabajos.sql` (después
 - El profesional sube hasta 12 fotos de trabajos anteriores desde su perfil; se ven en su perfil público.
 - Se muestra cuánto tarda en responder cada profesional (mediana de los últimos 6 meses, desde 2 presupuestos).
 
-### 8. Instalar en el celular
+### 8. Notificaciones push y guía de bienvenida
+1. Supabase → SQL Editor: ejecutá `supabase/migracion-10-push.sql` (después de la 09).
+2. Vercel → Environment Variables (Production, Sensitive): `VAPID_PRIVATE_KEY` = la clave privada VAPID (la pública está en `src/lib/push-config.ts`). Redeploy.
+- Cada usuario activa las notificaciones desde el panel o su perfil. En iPhone primero hay que agregar Manitos a la pantalla de inicio (iOS 16.4+).
+- Llegan push de: pedido nuevo (profesionales), presupuesto, preguntas y respuestas, te eligieron, trabajo terminado, verificación y **mensajes del chat**.
+- El profesional ve en su panel una guía con los pasos para completar su perfil.
+
+### 9. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

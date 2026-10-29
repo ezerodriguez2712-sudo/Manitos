@@ -96,6 +96,10 @@ export async function GET(req: Request) {
   const { data: completados, error: eC } = await sb.rpc("tarea_autocompletar");
   resultado.autocompletados = eC ? `error: ${eC.message}` : ((completados ?? []) as number[]).length;
 
+  // 5) Limpieza de registros viejos de avisos del chat
+  const { data: limpiados } = await sb.rpc("tarea_limpiar_avisos");
+  resultado.limpieza = limpiados ?? 0;
+
   if (mails.length) {
     try {
       resultado.mails = await enviar(mails);

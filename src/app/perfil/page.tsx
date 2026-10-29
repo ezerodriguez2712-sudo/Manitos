@@ -9,6 +9,7 @@ import { CampoBarrio, SelectorZonas } from "@/components/Barrios";
 import { BarraInferior } from "@/components/BarraInferior";
 import { PieLegal } from "@/components/Legal";
 import { BorrarCuenta } from "@/components/BorrarCuenta";
+import { FilaNotificaciones } from "@/components/Notificaciones";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
@@ -47,6 +48,14 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         .eq("profesional_id", perfil.id)
         .then(({ data }) => setMios(new Set((data ?? []).map((r) => r.rubro_id))));
   }, [perfil.id, esPro]);
+
+  // Si se llegó con un #paso (desde la guía de bienvenida), ir a esa parte
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 600);
+    return () => clearTimeout(t);
+  }, []);
 
   const alternar = (id: number) => {
     const s = new Set(mios);
@@ -104,7 +113,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         </p>
       )}
 
-      <section className="tarjeta flex items-center gap-4">
+      <section id="foto" className="tarjeta flex scroll-mt-20 items-center gap-4">
         <button
           type="button"
           onClick={() => archivo.current?.click()}
@@ -135,7 +144,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
       )}
       {esPro && <Verificacion perfil={perfil} />}
       {esPro && (
-        <div className="mt-3">
+        <div id="trabajos" className="mt-3 scroll-mt-20">
           <GaleriaTrabajos profesionalId={perfil.id} editable />
         </div>
       )}
@@ -146,7 +155,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           <input className="campo" required value={nombre} onChange={(e) => setNombre(e.target.value)} />
         </div>
         <div>
-          <label className="etiqueta">Celular (WhatsApp)</label>
+          <label id="celular" className="etiqueta scroll-mt-20">Celular (WhatsApp)</label>
           <input className="campo" type="tel" inputMode="tel" placeholder="351 555 1234" required value={telefono} onChange={(e) => setTelefono(e.target.value)} />
           <p className="mt-1 text-xs text-gris">Sólo lo ve la persona con la que confirmás un trabajo.</p>
         </div>
@@ -154,7 +163,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         {esPro ? (
           <>
             <div>
-              <label className="etiqueta">Rubros que atendés</label>
+              <label id="rubros" className="etiqueta scroll-mt-20">Rubros que atendés</label>
               <div className="grid grid-cols-2 gap-2">
                 {rubros.map((r) => (
                   <button
@@ -173,12 +182,12 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
               </div>
             </div>
             <div>
-              <label className="etiqueta">Zonas donde trabajás</label>
+              <label id="zonas" className="etiqueta scroll-mt-20">Zonas donde trabajás</label>
               <p className="mb-2 text-xs text-gris">Te mostramos primero los pedidos de estos barrios.</p>
               <SelectorZonas zonas={zonas} onChange={setZonas} />
             </div>
             <div>
-              <label className="etiqueta">Sobre vos y tu trabajo</label>
+              <label id="descripcion" className="etiqueta scroll-mt-20">Sobre vos y tu trabajo</label>
               <textarea
                 className="campo min-h-28"
                 maxLength={500}
@@ -220,6 +229,8 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
             }}
           />
         </label>
+
+        <FilaNotificaciones />
 
         {error && <p className="aviso-error">{error}</p>}
         {ok && <p className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">Cambios guardados.</p>}

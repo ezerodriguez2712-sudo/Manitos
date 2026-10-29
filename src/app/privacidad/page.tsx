@@ -20,6 +20,10 @@ export default function Privacidad() {
         <li>Pedidos: descripción, fotos, barrio y dirección del trabajo.</li>
         <li>Actividad: presupuestos, preguntas y respuestas, mensajes del chat y calificaciones.</li>
         <li>
+          Notificaciones (si las activás): un identificador de tu navegador para poder mandarte avisos. Las
+          podés desactivar cuando quieras desde tu perfil.
+        </li>
+        <li>
           Verificación (opcional, sólo profesionales): fotos del DNI y de la matrícula, que se usan
           únicamente para confirmar la identidad.
         </li>
