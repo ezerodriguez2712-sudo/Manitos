@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
+import { escucharInstalacion } from "@/lib/instalar";
 import { activarPush, desactivarPush, estadoPush, registrarSW, type EstadoPush } from "@/lib/push-cliente";
 
 /** Registra el service worker al abrir la app (notificaciones e instalación). */
 export function RegistrarSW() {
   useEffect(() => {
+    escucharInstalacion();
     registrarSW();
   }, []);
   return null;
@@ -49,7 +51,9 @@ export function TarjetaNotificaciones({ esPro }: { esPro: boolean }) {
   const [error, setError] = useState("");
   useEffect(() => setOculto(leerOculto()), []);
 
-  if (oculto || !estado || estado === "activo" || estado === "no-soportado" || estado === "bloqueado") return null;
+  // En iPhone sin instalar, la tarjeta de "Instalar Manitos" ya explica los pasos
+  if (oculto || !estado || estado === "activo" || estado === "no-soportado" || estado === "bloqueado" || estado === "instalar-ios")
+    return null;
 
   const ocultar = () => {
     setOculto(true);

@@ -10,6 +10,7 @@ import { BarraInferior } from "@/components/BarraInferior";
 import { PieLegal } from "@/components/Legal";
 import { BorrarCuenta } from "@/components/BorrarCuenta";
 import { FilaNotificaciones } from "@/components/Notificaciones";
+import { FilaInstalar } from "@/components/Instalar";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
@@ -230,6 +231,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           />
         </label>
 
+        <FilaInstalar />
         <FilaNotificaciones />
 
         {error && <p className="aviso-error">{error}</p>}

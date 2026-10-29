@@ -1,6 +1,7 @@
 "use client";
 import { GuiaBienvenida } from "@/components/GuiaBienvenida";
 import { TarjetaNotificaciones } from "@/components/Notificaciones";
+import { TarjetaInstalar } from "@/components/Instalar";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Azulejo, Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
@@ -90,6 +91,7 @@ function PanelCliente({ perfil, avisos }: { perfil: Perfil; avisos: Record<numbe
           + Nuevo pedido
         </Link>
       </div>
+      <TarjetaInstalar />
       {!!pedidos?.length && <TarjetaNotificaciones esPro={false} />}
 
       {!pedidos ? (
@@ -209,6 +211,7 @@ function PanelProfesional({ perfil, avisos }: { perfil: Perfil; avisos: Record<n
         </Link>
       )}
       <GuiaBienvenida perfil={perfil} />
+      <TarjetaInstalar />
       <TarjetaNotificaciones esPro />
 
       <Pestanas

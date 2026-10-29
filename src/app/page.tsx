@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Azulejo, Logo } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
 import { PieLegal } from "@/components/Legal";
+import { BotonInstalar } from "@/components/Instalar";
 
 const RUBROS: [string, string][] = [
   ["Plomería", "🚰"],
@@ -77,6 +78,7 @@ export default function Inicio() {
               Soy profesional, quiero trabajos
             </Link>
           </div>
+          <BotonInstalar className="mt-4 text-sm font-semibold text-white/85 underline underline-offset-4 hover:text-white" />
         </div>
         <div className="cinta-metrica h-5" aria-hidden />
       </section>
