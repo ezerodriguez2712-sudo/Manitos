@@ -40,11 +40,20 @@ Privacidad: la dirección y el teléfono sólo los ven el cliente y el profesion
    - `MAIL_REMITENTE` = el email verificado como remitente en Brevo
 3. Redeploy.
 
-Sólo se avisan eventos reales de los últimos 30 minutos y una sola vez cada uno, así que la dirección /api/avisos no necesita clave.
+Sólo se avisan eventos reales de los últimos 30 minutos y una sola vez cada uno, así que la dirección /api/avisos no necesita clave. El chequeo de la conexión con Brevo está en Panel de administrador → Mails.
 
 Se avisa: al profesional cuando entra un pedido de su rubro en sus zonas (o si no eligió zonas), al cliente cuando recibe un presupuesto y al profesional cuando lo eligen. Cada usuario puede apagar los avisos en su perfil.
 
-### 4. Instalar en el celular
+### 4. Panel de administrador
+1. Supabase → SQL Editor: ejecutá `supabase/migracion-06-admin.sql` (te marca como administrador a ezerodriguez2712@gmail.com).
+2. En la app vas a ver **📊 Panel de administrador** en el panel y en tu perfil (dirección `/admin`).
+3. Ahí tenés indicadores, usuarios (suspender/reactivar), pedidos (borrar los falsos) y el chequeo de los mails.
+
+Para sumar otro administrador: `update perfiles set es_admin = true where id = (select id from auth.users where email = 'otro@mail.com');`
+
+Cada usuario puede borrar su cuenta desde Perfil → *Borrar mi cuenta* (Ley 25.326).
+
+### 5. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

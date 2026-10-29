@@ -17,6 +17,18 @@ export default function Panel() {
     <>
       <Encabezado perfil={perfil} />
       <main className="contenedor pb-28 pt-6">
+        {perfil.suspendido && (
+          <p className="aviso-error mb-4">
+            <b>Tu cuenta está suspendida.</b> No podés publicar pedidos, mandar presupuestos ni escribir mensajes. Si creés
+            que es un error, escribinos.
+          </p>
+        )}
+        {perfil.es_admin && (
+          <Link href="/admin" className="mb-4 flex items-center justify-between rounded-xl bg-tinta px-4 py-2.5 text-sm font-semibold text-white">
+            <span>📊 Panel de administrador</span>
+            <span aria-hidden>→</span>
+          </Link>
+        )}
         {perfil.rol === "cliente" ? (
           <PanelCliente perfil={perfil} avisos={avisos} />
         ) : (

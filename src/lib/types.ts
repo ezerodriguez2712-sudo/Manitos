@@ -9,6 +9,8 @@ export interface Perfil {
   zonas?: string[];
   foto?: string | null;
   avisos_mail?: boolean;
+  es_admin?: boolean;
+  suspendido?: boolean;
 }
 
 export interface Rubro {

@@ -6,6 +6,7 @@ import { Avatar, Azulejo, Cargando, Encabezado, Estrellas } from "@/components/E
 import { CampoBarrio, SelectorZonas } from "@/components/Barrios";
 import { BarraInferior } from "@/components/BarraInferior";
 import { PieLegal } from "@/components/Legal";
+import { BorrarCuenta } from "@/components/BorrarCuenta";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
@@ -215,6 +216,13 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           {guardando ? "Guardando…" : "Guardar cambios"}
         </button>
       </form>
+      {perfil.es_admin && (
+        <Link href="/admin" className="tarjeta mt-6 flex items-center justify-between font-semibold hover:border-marca">
+          <span>📊 Panel de administrador</span>
+          <span className="text-marca">→</span>
+        </Link>
+      )}
+      <BorrarCuenta perfilId={perfil.id} />
       <PieLegal />
     </main>
   );

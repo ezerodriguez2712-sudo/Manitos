@@ -86,11 +86,11 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
     if (p.estado !== "abierto" || !reciente(p.creado_en)) return nota(notas, "pedido cerrado o de hace más de 30 minutos");
     const { data: prs } = await sb
       .from("profesional_rubros")
-      .select("profesional_id, perfiles(id, nombre, zonas, avisos_mail, rol)")
+      .select("profesional_id, perfiles(*)")
       .eq("rubro_id", p.rubro_id);
     const candidatos = ((prs ?? []) as unknown as { perfiles: Destinatario | null }[])
       .map((x) => x.perfiles)
-      .filter((x): x is Destinatario => !!x && x.rol === "profesional" && x.avisos_mail !== false && x.id !== p.cliente_id)
+      .filter((x): x is Destinatario => !!x && x.rol === "profesional" && x.avisos_mail !== false && !x.suspendido && x.id !== p.cliente_id)
       // Sólo a quienes trabajan en ese barrio, o a quienes todavía no eligieron zonas
       .filter((x) => !x.zonas?.length || x.zonas.some((z) => mismoBarrio(z, p.zona)))
       .slice(0, MAX_PROFESIONALES);
@@ -191,6 +191,7 @@ interface Destinatario {
   rol: string;
   zonas?: string[] | null;
   avisos_mail?: boolean | null;
+  suspendido?: boolean | null;
 }
 
 async function perfilDe(sb: SupabaseClient, id: string) {
@@ -296,13 +297,22 @@ function explicar(msg: string) {
 }
 
 /**
- * Chequeo rápido: abrir /api/avisos en el navegador.
+ * Chequeo de los avisos (lo usa el panel de administrador).
  * Muestra cómo están cargadas las variables (sin revelar claves) y prueba el login en Brevo.
+ * Sólo responde a administradores logueados.
  */
-export async function GET() {
-  const clave = env("BREVO_SMTP_CLAVE");
+export async function GET(req: Request) {
+  const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
   const service = env("SUPABASE_SERVICE_ROLE_KEY");
-  const datos = {
+  if (!token) return NextResponse.json({ error: "Abrí el chequeo desde el panel de administrador." }, { status: 401 });
+  if (!service) return NextResponse.json({ error: "Falta SUPABASE_SERVICE_ROLE_KEY en Vercel." }, { status: 500 });
+  const sb = createClient(urlSupabase(), service, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: u } = await sb.auth.getUser(token);
+  const { data: yo } = u?.user ? await sb.from("perfiles").select("es_admin").eq("id", u.user.id).maybeSingle() : { data: null };
+  if (!yo?.es_admin) return NextResponse.json({ error: "Sólo administradores." }, { status: 403 });
+
+  const clave = env("BREVO_SMTP_CLAVE");
+  const variables = {
     BREVO_SMTP_USUARIO: env("BREVO_SMTP_USUARIO") || "(vacío)",
     BREVO_SMTP_CLAVE: clave
       ? `${clave.slice(0, 9)}… (${clave.length} caracteres)${clave.startsWith("xsmtpsib-") ? "" : " ⚠️ debería empezar con xsmtpsib-"}`
@@ -310,8 +320,9 @@ export async function GET() {
     MAIL_REMITENTE: env("MAIL_REMITENTE")
       ? env("MAIL_REMITENTE") + (pareceMail(env("MAIL_REMITENTE")) ? "" : " ⚠️ no es un email: poné el remitente verificado en Brevo")
       : "(vacío)",
-    SUPABASE_SERVICE_ROLE_KEY: service ? `${service.slice(0, 10)}… (${service.length} caracteres)` : "(vacío)",
+    SUPABASE_SERVICE_ROLE_KEY: `${service.slice(0, 10)}… (${service.length} caracteres)`,
   };
+  let brevoOk = false;
   let brevo = "";
   try {
     const t = nodemailer.createTransport({
@@ -324,13 +335,15 @@ export async function GET() {
       socketTimeout: 15000,
     });
     await t.verify();
-    brevo = "✅ Brevo aceptó el usuario y la clave";
+    brevoOk = true;
+    brevo = "Brevo aceptó el usuario y la clave";
   } catch (e) {
-    brevo = "❌ " + explicar(e instanceof Error ? e.message : String(e));
+    brevo = explicar(e instanceof Error ? e.message : String(e));
   }
-  return new NextResponse(
-    `Chequeo de avisos de Manitos\n\nBrevo: ${brevo}\n\nVariables cargadas en Vercel:\n` +
-      Object.entries(datos).map(([k, v]) => `  ${k}: ${v}`).join("\n"),
-    { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-  );
+  const { data: ultimos } = await sb
+    .from("avisos_enviados")
+    .select("*")
+    .order("enviado_en", { ascending: false })
+    .limit(5);
+  return NextResponse.json({ brevoOk, brevo, variables, ultimos: ultimos ?? [] });
 }
