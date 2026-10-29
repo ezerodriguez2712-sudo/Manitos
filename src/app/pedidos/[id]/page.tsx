@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, SelloVerificado, whatsapp } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
 import { describirVivienda, linkComoLlegar, linkMaps, mapaEmbebido, type Ubicacion, type Vivienda } from "@/lib/mapas";
 import { Chat } from "@/components/Chat";
+import { Preguntas } from "@/components/Preguntas";
 import { useSesion } from "@/lib/useSesion";
 import { fotoUrl, supabase } from "@/lib/supabase";
 import {
@@ -96,6 +97,7 @@ export default function DetallePedido() {
         ) : (
           <>
             <FichaPedido d={d} />
+            <Preguntas pedido={d.pedido} yo={perfil} />
             {d.pedido.cliente_id === perfil.id ? (
               <VistaCliente d={d} yo={perfil} recargar={cargar} />
             ) : (
@@ -185,6 +187,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                     <Avatar nombre={pr.perfiles?.nombre} foto={pr.perfiles?.foto} tam={44} />
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{pr.perfiles?.nombre}</span>
+                      {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
                       <Estrellas {...d.reputaciones[pr.profesional_id]} />
                     </span>
                   </Link>
@@ -238,6 +241,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
               <Avatar nombre={pro.nombre} foto={pro.foto} tam={44} />
               <span className="min-w-0">
                 <span className="block truncate font-bold">{pro.nombre}</span>
+                {pro.verificado && <SelloVerificado matriculado={pro.matriculado} chico />}
                 <Estrellas {...d.reputaciones[pro.id]} />
               </span>
             </Link>

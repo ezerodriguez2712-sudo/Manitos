@@ -11,6 +11,8 @@ export interface Perfil {
   avisos_mail?: boolean;
   es_admin?: boolean;
   suspendido?: boolean;
+  verificado?: boolean;
+  matriculado?: boolean;
 }
 
 export interface Rubro {
@@ -94,3 +96,32 @@ export interface Aviso {
   novedades: number;
   mensajes: number;
 }
+
+export interface Pregunta {
+  id: number;
+  pedido_id: number;
+  profesional_id: string;
+  texto: string;
+  respuesta: string | null;
+  creado_en: string;
+  respondido_en: string | null;
+  perfiles?: Pick<Perfil, "nombre" | "foto" | "verificado"> | null;
+}
+
+export type EstadoVerificacion = "pendiente" | "aprobada" | "rechazada";
+
+export interface Verificacion {
+  perfil_id: string;
+  estado: EstadoVerificacion;
+  dni_frente: string;
+  dni_dorso: string;
+  matricula_foto: string | null;
+  matricula: string | null;
+  nota: string | null;
+  enviado_en: string;
+  revisado_en: string | null;
+}
+
+/** Teléfonos o mails dentro de un texto (no se permiten antes de elegir presupuesto). */
+export const tieneContacto = (t: string) =>
+  /[0-9][0-9 .()-]{6,}[0-9]/.test(t) || /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(t);

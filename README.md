@@ -53,7 +53,12 @@ Para sumar otro administrador: `update perfiles set es_admin = true where id = (
 
 Cada usuario puede borrar su cuenta desde Perfil → *Borrar mi cuenta* (Ley 25.326).
 
-### 5. Instalar en el celular
+### 5. Preguntas y profesional verificado
+Supabase → SQL Editor: ejecutá `supabase/migracion-07-preguntas-y-verificacion.sql` (después de la 06).
+- **Preguntas:** el profesional puede consultarle al cliente antes de presupuestar (hasta 3 por pedido, sin teléfonos ni mails). Las respuestas las ven todos los profesionales. Avisa por mail.
+- **Verificado:** el profesional sube DNI (y matrícula) desde su perfil; las fotos van a un depósito privado. Se aprueban o rechazan en Panel de administrador → Verificación y le llega un mail.
+
+### 6. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, SelloVerificado } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useSesion } from "@/lib/useSesion";
 import { useAvisos } from "@/lib/useAvisos";
@@ -75,6 +75,11 @@ export default function PerfilProfesional() {
               <div className="-mt-12 px-4 pb-4">
                 <Avatar nombre={pro.nombre} foto={pro.foto} tam={88} className="border-4 border-white" />
                 <h1 className="mt-2 text-2xl font-extrabold leading-tight tracking-tight">{pro.nombre}</h1>
+                {pro.verificado && (
+                  <div className="mt-1">
+                    <SelloVerificado matriculado={pro.matriculado} />
+                  </div>
+                )}
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                   {rep?.cantidad ? (
                     <span>

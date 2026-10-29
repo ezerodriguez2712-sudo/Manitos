@@ -177,3 +177,19 @@ export function Avatar({
     </span>
   );
 }
+
+/** Sello de profesional verificado (identidad revisada por Manitos). */
+export function SelloVerificado({ matriculado = false, chico = false }: { matriculado?: boolean; chico?: boolean }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full bg-green-100 font-bold text-green-800 ${chico ? "px-1.5 py-0 text-[11px]" : "px-2 py-0.5 text-xs"}`}
+      title={matriculado ? "Identidad y matrícula verificadas por Manitos" : "Identidad verificada por Manitos"}
+    >
+      <svg width={chico ? 11 : 13} height={chico ? 11 : 13} viewBox="0 0 16 16" aria-hidden>
+        <circle cx="8" cy="8" r="8" fill="#15803d" />
+        <path d="M4.5 8.3l2.2 2.2 4.8-4.9" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {matriculado ? "Verificado · Matriculado" : "Verificado"}
+    </span>
+  );
+}

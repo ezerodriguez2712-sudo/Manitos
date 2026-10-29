@@ -18,7 +18,11 @@ export default function Privacidad() {
         <li>Cuenta: nombre, email, contraseña (cifrada) y celular.</li>
         <li>Perfil: barrio o zonas de trabajo, rubros, descripción y foto, si la cargás.</li>
         <li>Pedidos: descripción, fotos, barrio y dirección del trabajo.</li>
-        <li>Actividad: presupuestos, mensajes del chat y calificaciones.</li>
+        <li>Actividad: presupuestos, preguntas y respuestas, mensajes del chat y calificaciones.</li>
+        <li>
+          Verificación (opcional, sólo profesionales): fotos del DNI y de la matrícula, que se usan
+          únicamente para confirmar la identidad.
+        </li>
       </ul>
 
       <h2>Quién ve cada cosa</h2>
@@ -29,7 +33,12 @@ export default function Privacidad() {
           después de confirmarlo.
         </li>
         <li>Los presupuestos los ven sólo el profesional que los mandó y el cliente del pedido.</li>
+        <li>Las preguntas sobre un pedido y sus respuestas las ven el cliente y los profesionales del rubro.</li>
         <li>El chat lo ven sólo el cliente y el profesional elegido.</li>
+        <li>
+          Las fotos del DNI y la matrícula se guardan en un depósito privado: sólo las ven el profesional y el
+          equipo de Manitos. Los clientes sólo ven el sello “Verificado”.
+        </li>
         <li>El perfil del profesional, sus calificaciones y reseñas los ven los usuarios de Manitos.</li>
       </ul>
 

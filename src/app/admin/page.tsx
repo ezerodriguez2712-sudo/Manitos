@@ -66,7 +66,7 @@ interface PedidoAdmin {
   presupuestos: number;
 }
 
-type Seccion = "indicadores" | "usuarios" | "pedidos" | "mails";
+type Seccion = "indicadores" | "usuarios" | "pedidos" | "verificacion" | "mails";
 
 const num = (n: number | null | undefined, sufijo = "") => (n == null ? "—" : `${n.toLocaleString("es-AR")}${sufijo}`);
 
@@ -79,6 +79,16 @@ const explicarError = (m: string) =>
 export default function PaginaAdmin() {
   const { perfil, cargando, error } = useSesion();
   const [seccion, setSeccion] = useState<Seccion>("indicadores");
+  const [pendientes, setPendientes] = useState(0);
+  const esAdmin = !!perfil?.es_admin;
+  const contarPendientes = useCallback(() => {
+    supabase()
+      .rpc("admin_pendientes")
+      .then(({ data }) => setPendientes(data?.verificaciones ?? 0));
+  }, []);
+  useEffect(() => {
+    if (esAdmin) contarPendientes();
+  }, [esAdmin, contarPendientes]);
 
   if (cargando || !perfil) return (<><Encabezado /><Cargando error={error} /></>);
   if (!perfil.es_admin)
@@ -97,6 +107,7 @@ export default function PaginaAdmin() {
     { valor: "indicadores", texto: "Indicadores" },
     { valor: "usuarios", texto: "Usuarios" },
     { valor: "pedidos", texto: "Pedidos" },
+    { valor: "verificacion", texto: "Verificación" },
     { valor: "mails", texto: "Mails" },
   ];
 
@@ -111,22 +122,26 @@ export default function PaginaAdmin() {
           </div>
           <Link href="/panel" className="text-sm font-semibold text-marca">← Volver a la app</Link>
         </div>
-        <div className="mt-5 grid grid-cols-4 gap-1 rounded-xl bg-white p-1 ring-1 ring-borde" role="tablist">
+        <div className="mt-5 flex gap-1 overflow-x-auto rounded-xl bg-white p-1 ring-1 ring-borde" role="tablist">
           {secciones.map((s) => (
             <button
               key={s.valor}
               role="tab"
               aria-selected={seccion === s.valor}
               onClick={() => setSeccion(s.valor)}
-              className={`rounded-lg py-2 text-sm font-semibold ${seccion === s.valor ? "bg-tinta text-white" : "text-gris"}`}
+              className={`relative flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold ${seccion === s.valor ? "bg-tinta text-white" : "text-gris"}`}
             >
               {s.texto}
+              {s.valor === "verificacion" && pendientes > 0 && (
+                <span className="ml-1.5 rounded-full bg-red-600 px-1.5 text-xs text-white">{pendientes}</span>
+              )}
             </button>
           ))}
         </div>
         {seccion === "indicadores" && <Indicadores />}
         {seccion === "usuarios" && <Usuarios miId={perfil.id} />}
         {seccion === "pedidos" && <Pedidos />}
+        {seccion === "verificacion" && <Verificaciones alCambiar={contarPendientes} />}
         {seccion === "mails" && <ChequeoMails />}
       </main>
     </>
@@ -485,6 +500,186 @@ function Pedidos() {
   );
 }
 
+/* ---------------- Verificación de profesionales ---------------- */
+interface VerifAdmin {
+  perfil_id: string;
+  nombre: string;
+  email: string | null;
+  zona: string | null;
+  rubros: string | null;
+  estado: "pendiente" | "aprobada" | "rechazada";
+  dni_frente: string;
+  dni_dorso: string;
+  matricula_foto: string | null;
+  matricula: string | null;
+  nota: string | null;
+  enviado_en: string;
+  revisado_en: string | null;
+}
+
+function Verificaciones({ alCambiar }: { alCambiar: () => void }) {
+  const [estado, setEstado] = useState<"pendiente" | "aprobada" | "rechazada">("pendiente");
+  const [lista, setLista] = useState<VerifAdmin[] | null>(null);
+  const [error, setError] = useState("");
+
+  const cargar = useCallback(async () => {
+    const { data, error } = await supabase().rpc("admin_verificaciones", { p_estado: estado });
+    if (error) setError(/admin_verificaciones|schema cache/i.test(error.message) ? "Falta correr supabase/migracion-07-preguntas-y-verificacion.sql en Supabase." : error.message);
+    else setLista(data as VerifAdmin[]);
+  }, [estado]);
+  useEffect(() => {
+    setLista(null);
+    cargar();
+  }, [cargar]);
+
+  return (
+    <div className="mt-5">
+      <select className="campo sm:w-56" value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)} aria-label="Filtrar verificaciones">
+        <option value="pendiente">Pendientes de revisar</option>
+        <option value="aprobada">Aprobadas</option>
+        <option value="rechazada">Rechazadas</option>
+      </select>
+      {error && <p className="aviso-error mt-3">{error}</p>}
+      {!lista ? (
+        !error && <Esqueleto />
+      ) : !lista.length ? (
+        <p className="mt-4 rounded-xl bg-white p-4 text-sm text-gris">
+          {estado === "pendiente" ? "No hay verificaciones para revisar. 👌" : "No hay verificaciones con ese estado."}
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-3">
+          {lista.map((v) => (
+            <TarjetaVerificacion key={v.perfil_id} v={v} alListo={() => { cargar(); alCambiar(); }} />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function TarjetaVerificacion({ v, alListo }: { v: VerifAdmin; alListo: () => void }) {
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [matriculado, setMatriculado] = useState(!!v.matricula);
+  const [rechazando, setRechazando] = useState(false);
+  const [nota, setNota] = useState("");
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const rutas = [v.dni_frente, v.dni_dorso, v.matricula_foto].filter((x): x is string => !!x);
+    supabase()
+      .storage.from("documentos")
+      .createSignedUrls(rutas, 60 * 30)
+      .then(({ data }) => setUrls(Object.fromEntries((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path ?? "", d.signedUrl as string]))));
+  }, [v.dni_frente, v.dni_dorso, v.matricula_foto]);
+
+  const revisar = async (aprobar: boolean) => {
+    setError("");
+    if (!aprobar && !nota.trim()) return setError("Escribí el motivo para que el profesional sepa qué corregir.");
+    setOcupado(true);
+    const { error } = await supabase().rpc("admin_revisar_verificacion", {
+      p_perfil: v.perfil_id,
+      p_aprobar: aprobar,
+      p_matriculado: aprobar && matriculado,
+      p_nota: aprobar ? null : nota.trim(),
+    });
+    setOcupado(false);
+    if (error) return setError(error.message);
+    alListo();
+  };
+
+  const fotos: [string, string | null][] = [
+    ["DNI frente", v.dni_frente],
+    ["DNI dorso", v.dni_dorso],
+    ["Matrícula", v.matricula_foto],
+  ];
+
+  return (
+    <li className="tarjeta">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <Link href={`/profesionales/${v.perfil_id}`} className="font-bold hover:underline">{v.nombre || "(sin nombre)"}</Link>
+          <p className="text-sm text-gris">{v.email}{v.zona ? ` · ${v.zona}` : ""}</p>
+          {v.rubros && <p className="text-xs text-gris">🔧 {v.rubros}</p>}
+        </div>
+        <p className="text-xs text-gris">Enviado {hace(v.enviado_en)}</p>
+      </div>
+      {v.matricula && (
+        <p className="mt-2 text-sm">
+          Matrícula: <b>{v.matricula}</b>
+        </p>
+      )}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {fotos.map(([titulo, ruta]) =>
+          ruta ? (
+            <a key={titulo} href={urls[ruta]} target="_blank" rel="noreferrer" className="block">
+              <span className="text-xs font-semibold text-gris">{titulo}</span>
+              {urls[ruta] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={urls[ruta]} alt={titulo} className="mt-1 aspect-[3/2] w-full rounded-lg bg-fondo object-cover" />
+              ) : (
+                <span className="mt-1 block aspect-[3/2] w-full animate-pulse rounded-lg bg-fondo" />
+              )}
+            </a>
+          ) : null
+        )}
+      </div>
+      <p className="mt-2 text-xs text-gris">Tocá una foto para verla grande. Revisá que el nombre coincida con el del perfil.</p>
+
+      {v.estado === "rechazada" && v.nota && <p className="mt-2 text-sm text-red-700">Motivo del rechazo: {v.nota}</p>}
+
+      {v.estado === "pendiente" &&
+        (rechazando ? (
+          <div className="mt-3 space-y-2">
+            <label htmlFor={`nota-${v.perfil_id}`} className="etiqueta">Motivo (le llega por mail)</label>
+            <textarea
+              id={`nota-${v.perfil_id}`}
+              className="campo min-h-16"
+              placeholder="Ej: La foto del dorso está borrosa / el nombre no coincide con el del perfil"
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button onClick={() => revisar(false)} disabled={ocupado} className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white">
+                Rechazar
+              </button>
+              <button onClick={() => setRechazando(false)} className="btn-sec">Volver</button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {v.matricula && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={matriculado} onChange={(e) => setMatriculado(e.target.checked)} className="h-5 w-5 accent-marca" />
+                La matrícula es válida (suma el sello “Matriculado”)
+              </label>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => revisar(true)} disabled={ocupado} className="btn flex-1 py-2.5">
+                ✓ Aprobar
+              </button>
+              <button onClick={() => setRechazando(true)} className="btn-sec">Rechazar…</button>
+            </div>
+          </div>
+        ))}
+      {v.estado === "aprobada" && (
+        <button onClick={() => setRechazando(true)} className={`mt-2 text-xs font-semibold text-gris underline ${rechazando ? "hidden" : ""}`}>
+          Quitar verificación
+        </button>
+      )}
+      {v.estado === "aprobada" && rechazando && (
+        <div className="mt-3 space-y-2">
+          <textarea className="campo min-h-16" placeholder="Motivo" value={nota} onChange={(e) => setNota(e.target.value)} aria-label="Motivo" />
+          <button onClick={() => revisar(false)} disabled={ocupado} className="w-full rounded-xl bg-red-600 px-4 py-2.5 font-semibold text-white">
+            Quitar el sello
+          </button>
+        </div>
+      )}
+      {error && <p className="aviso-error mt-2">{error}</p>}
+    </li>
+  );
+}
+
 /* ---------------- Chequeo de mails ---------------- */
 interface Chequeo {
   brevoOk: boolean;
@@ -497,6 +692,9 @@ const TIPO_AVISO: Record<string, string> = {
   nuevo_pedido: "Pedido nuevo → profesionales",
   nuevo_presupuesto: "Presupuesto nuevo → cliente",
   elegido: "Presupuesto elegido → profesional",
+  pregunta: "Pregunta nueva → cliente",
+  respuesta: "Respuesta → profesional",
+  verificacion: "Verificación revisada → profesional",
 };
 
 function ChequeoMails() {

@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado, Estrellas } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, Estrellas, SelloVerificado } from "@/components/Encabezado";
+import { Verificacion } from "@/components/Verificacion";
 import { CampoBarrio, SelectorZonas } from "@/components/Barrios";
 import { BarraInferior } from "@/components/BarraInferior";
 import { PieLegal } from "@/components/Legal";
@@ -117,7 +118,10 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
         <input ref={archivo} type="file" accept="image/*" hidden onChange={(e) => subirFoto(e.target.files?.[0])} />
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-extrabold tracking-tight">{nombre || "Mi perfil"}</h1>
-          <p className="text-sm text-gris">{esPro ? "Profesional" : "Cliente"}</p>
+          <p className="flex flex-wrap items-center gap-1.5 text-sm text-gris">
+            {esPro ? "Profesional" : "Cliente"}
+            {perfil.verificado && <SelloVerificado matriculado={perfil.matriculado} chico />}
+          </p>
           <div className="mt-1">
             <Estrellas promedio={rep?.promedio} cantidad={rep?.cantidad} />
           </div>
@@ -128,6 +132,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           Ver mi perfil como lo ven los clientes
         </Link>
       )}
+      {esPro && <Verificacion perfil={perfil} />}
 
       <form onSubmit={guardar} className="mt-6 space-y-5">
         <div>

@@ -18,6 +18,8 @@ export function BorrarCuenta({ perfilId }: { perfilId: string }) {
     // 1) Fotos subidas (perfil y pedidos)
     const { data: archivos } = await sb.storage.from("fotos").list(perfilId, { limit: 1000 });
     if (archivos?.length) await sb.storage.from("fotos").remove(archivos.map((a) => `${perfilId}/${a.name}`));
+    const { data: docs } = await sb.storage.from("documentos").list(perfilId, { limit: 100 });
+    if (docs?.length) await sb.storage.from("documentos").remove(docs.map((a) => `${perfilId}/${a.name}`));
     // 2) Usuario y todos sus datos
     const { error } = await sb.rpc("borrar_mi_cuenta");
     if (error) {
@@ -36,7 +38,7 @@ export function BorrarCuenta({ perfilId }: { perfilId: string }) {
     <section className="mt-10 rounded-2xl border border-red-200 bg-white p-4">
       <h2 className="font-titulo text-lg font-bold text-red-700">Borrar mi cuenta</h2>
       <p className="mt-1 text-sm text-gris">
-        Se borran para siempre tu perfil, teléfono, fotos, pedidos, presupuestos, mensajes y calificaciones. No se puede deshacer.
+        Se borran para siempre tu perfil, teléfono, fotos, documentos, pedidos, presupuestos, mensajes y calificaciones. No se puede deshacer.
       </p>
       {!abierto ? (
         <button type="button" onClick={() => setAbierto(true)} className="mt-3 text-sm font-semibold text-red-700 underline">

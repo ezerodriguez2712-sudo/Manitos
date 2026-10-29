@@ -23,7 +23,8 @@ const MINUTOS_VIGENCIA = 30; // sólo se avisan eventos de los últimos 30 minut
 const reciente = (fecha?: string | null) =>
   !!fecha && Date.now() - new Date(fecha).getTime() < MINUTOS_VIGENCIA * 60_000; // tope por pedido para cuidar el límite diario de Brevo
 
-type Tipo = "nuevo_pedido" | "nuevo_presupuesto" | "elegido";
+const TIPOS = ["nuevo_pedido", "nuevo_presupuesto", "elegido", "pregunta", "respuesta", "verificacion"] as const;
+type Tipo = (typeof TIPOS)[number];
 
 export async function POST(req: Request) {
   // Seguridad: no hace falta un secreto compartido. Sólo se avisa de eventos reales,
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     const b = await req.json();
     tipo = b.tipo;
     id = Number(b.id);
-    if (!["nuevo_pedido", "nuevo_presupuesto", "elegido"].includes(tipo) || !id) throw new Error();
+    if (!TIPOS.includes(tipo) || !id) throw new Error();
   } catch {
     return NextResponse.json({ error: "Pedido inválido" }, { status: 400 });
   }
@@ -150,6 +151,80 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
           boton: n > 1 ? "Comparar presupuestos" : "Ver presupuesto",
           enlace: `${sitio}/pedidos/${pr.pedidos.id}`,
           pie: PIE_AVISOS,
+        }),
+      },
+    ];
+  }
+
+  if (tipo === "pregunta" || tipo === "respuesta") {
+    const { data: q } = await sb.from("preguntas").select("*").eq("id", id).maybeSingle();
+    if (!q) return nota(notas, `pregunta #${id} no encontrada`);
+    if (!reciente(tipo === "pregunta" ? q.creado_en : q.respondido_en)) return nota(notas, "de hace más de 30 minutos");
+    const { data: ped } = await sb.from("pedidos").select("id, titulo, cliente_id, estado").eq("id", q.pedido_id).maybeSingle();
+    if (!ped || ped.estado !== "abierto") return nota(notas, "el pedido ya no está abierto");
+    const pro = await perfilDe(sb, q.profesional_id);
+    if (tipo === "pregunta") {
+      const cliente = await perfilDe(sb, ped.cliente_id);
+      if (!cliente || cliente.avisos_mail === false) return nota(notas, "el cliente tiene los avisos por mail apagados");
+      const email = await emailDe(sb, cliente.id, notas);
+      if (!email) return [];
+      return [
+        {
+          para: email,
+          nombre: cliente.nombre,
+          asunto: `Te hicieron una pregunta sobre "${recortar(ped.titulo, 50)}"`,
+          html: plantillaMail({
+            titulo: "Un profesional tiene una consulta",
+            texto: `${saludo(cliente.nombre)}, ${pro?.nombre ?? "un profesional"} necesita un dato para pasarte un presupuesto más preciso.`,
+            detalle: `${ped.titulo}\n"${recortar(q.texto, 300)}"`,
+            boton: "Responder",
+            enlace: `${sitio}/pedidos/${ped.id}#preguntas`,
+            pie: PIE_AVISOS,
+          }),
+        },
+      ];
+    }
+    if (!pro || pro.avisos_mail === false) return nota(notas, "el profesional tiene los avisos por mail apagados");
+    const email = await emailDe(sb, pro.id, notas);
+    if (!email) return [];
+    return [
+      {
+        para: email,
+        nombre: pro.nombre,
+        asunto: `Te respondieron: "${recortar(ped.titulo, 50)}"`,
+        html: plantillaMail({
+          titulo: "El cliente respondió tu pregunta",
+          texto: `${saludo(pro.nombre)}, ya tenés la respuesta. Ahora podés mandar tu presupuesto.`,
+          detalle: `Tu pregunta: "${recortar(q.texto, 200)}"\nRespuesta: "${recortar(q.respuesta ?? "", 300)}"`,
+          boton: "Ver pedido y presupuestar",
+          enlace: `${sitio}/pedidos/${ped.id}`,
+          pie: PIE_AVISOS,
+        }),
+      },
+    ];
+  }
+
+  if (tipo === "verificacion") {
+    const { data: v } = await sb.from("verificaciones").select("*").eq("revision", id).maybeSingle();
+    if (!v || !reciente(v.revisado_en)) return nota(notas, "revisión no encontrada o de hace más de 30 minutos");
+    const pro = await perfilDe(sb, v.perfil_id);
+    const email = pro ? await emailDe(sb, pro.id, notas) : null;
+    if (!pro || !email) return [];
+    const ok = v.estado === "aprobada";
+    return [
+      {
+        para: email,
+        nombre: pro.nombre,
+        asunto: ok ? "¡Tu perfil está verificado! ✓" : "Revisamos tu verificación: falta corregir algo",
+        html: plantillaMail({
+          titulo: ok ? "¡Ya sos profesional verificado!" : "Necesitamos que corrijas algo",
+          texto: ok
+            ? `${saludo(pro.nombre)}, revisamos tus datos y tu perfil ya muestra el sello de verificado. Los clientes confían más en los perfiles verificados.`
+            : `${saludo(pro.nombre)}, revisamos tus documentos pero no pudimos verificarte todavía. Corregí lo que te indicamos y volvé a enviarlos desde tu perfil.`,
+          detalle: ok ? undefined : `Motivo: ${v.nota ?? "-"}`,
+          boton: ok ? "Ver mi perfil" : "Volver a enviar",
+          enlace: `${sitio}/perfil#verificacion`,
+          pie: "Recibís este mail porque pediste verificar tu perfil en Manitos.",
         }),
       },
     ];
