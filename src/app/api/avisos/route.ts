@@ -56,9 +56,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const mails = await armarMails(sb, tipo, id);
+    const notas: string[] = [];
+    const mails = await armarMails(sb, tipo, id, notas);
     const enviados = await enviar(mails);
-    return NextResponse.json({ ok: true, enviados });
+    return NextResponse.json({ ok: true, enviados, ...(notas.length ? { notas } : {}) });
   } catch (e) {
     // Si falla, se libera para poder reintentar
     await sb.from("avisos_enviados").delete().eq("tipo", tipo).eq("ref_id", id);
@@ -75,12 +76,13 @@ interface Mail {
   html: string;
 }
 
-async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<Mail[]> {
+async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: string[]): Promise<Mail[]> {
   const sitio = urlSitio();
 
   if (tipo === "nuevo_pedido") {
     const { data: p } = await sb.from("pedidos").select("*, rubros(nombre)").eq("id", id).maybeSingle();
-    if (!p || p.estado !== "abierto" || !reciente(p.creado_en)) return [];
+    if (!p) return nota(notas, `pedido #${id} no encontrado`);
+    if (p.estado !== "abierto" || !reciente(p.creado_en)) return nota(notas, "pedido cerrado o de hace más de 30 minutos");
     const { data: prs } = await sb
       .from("profesional_rubros")
       .select("profesional_id, perfiles(id, nombre, zonas, avisos_mail, rol)")
@@ -94,8 +96,9 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
 
     const urgente = p.urgencia === "urgente" ? "Urgente: " : "";
     const mails: Mail[] = [];
+    if (!candidatos.length) notas.push("ningún profesional de ese rubro trabaja en esa zona o tiene los avisos activos");
     for (const pro of candidatos) {
-      const email = await emailDe(sb, pro.id);
+      const email = await emailDe(sb, pro.id, notas);
       if (!email) continue;
       mails.push({
         para: email,
@@ -115,15 +118,22 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
   }
 
   if (tipo === "nuevo_presupuesto") {
-    const { data: pr } = await sb
-      .from("presupuestos")
-      .select("*, perfiles(nombre), pedidos(id, titulo, cliente_id, estado)")
-      .eq("id", id)
+    const { data: presu, error: ePr } = await sb.from("presupuestos").select("*").eq("id", id).maybeSingle();
+    if (!presu) return nota(notas, `presupuesto #${id} no encontrado${ePr ? ": " + ePr.message : ""}`);
+    if (!reciente(presu.creado_en)) return nota(notas, "presupuesto de hace más de 30 minutos");
+    const { data: ped, error: ePe } = await sb
+      .from("pedidos")
+      .select("id, titulo, cliente_id, estado")
+      .eq("id", presu.pedido_id)
       .maybeSingle();
-    if (!pr?.pedidos || pr.pedidos.estado !== "abierto" || !reciente(pr.creado_en)) return [];
-    const cliente = await perfilDe(sb, pr.pedidos.cliente_id);
-    if (!cliente || cliente.avisos_mail === false) return [];
-    const email = await emailDe(sb, cliente.id);
+    if (!ped) return nota(notas, `pedido #${presu.pedido_id} no encontrado${ePe ? ": " + ePe.message : ""}`);
+    if (ped.estado !== "abierto") return nota(notas, `el pedido ya no está abierto (${ped.estado})`);
+    const autor = await perfilDe(sb, presu.profesional_id);
+    const pr = { ...presu, perfiles: autor, pedidos: ped };
+    const cliente = await perfilDe(sb, ped.cliente_id);
+    if (!cliente) return nota(notas, "no se encontró el perfil del cliente");
+    if (cliente.avisos_mail === false) return nota(notas, "el cliente tiene los avisos por mail apagados");
+    const email = await emailDe(sb, cliente.id, notas);
     if (!email) return [];
     const { count } = await sb.from("presupuestos").select("id", { count: "exact", head: true }).eq("pedido_id", pr.pedidos.id);
     const n = count ?? 1;
@@ -146,12 +156,12 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number): Promise<M
 
   // elegido
   const { data: p } = await sb.from("pedidos").select("*").eq("id", id).maybeSingle();
-  if (!p?.presupuesto_elegido_id) return [];
+  if (!p?.presupuesto_elegido_id) return nota(notas, "el pedido no tiene presupuesto elegido");
   const { data: pr } = await sb.from("presupuestos").select("*").eq("id", p.presupuesto_elegido_id).maybeSingle();
-  if (!pr || !reciente(pr.respondido_en ?? pr.creado_en)) return [];
+  if (!pr || !reciente(pr.respondido_en ?? pr.creado_en)) return nota(notas, "elección de hace más de 30 minutos");
   const pro = await perfilDe(sb, pr.profesional_id);
-  if (!pro || pro.avisos_mail === false) return [];
-  const email = await emailDe(sb, pro.id);
+  if (!pro || pro.avisos_mail === false) return nota(notas, "el profesional tiene los avisos por mail apagados");
+  const email = await emailDe(sb, pro.id, notas);
   if (!email) return [];
   const cliente = await perfilDe(sb, p.cliente_id);
   return [
@@ -184,11 +194,24 @@ async function perfilDe(sb: SupabaseClient, id: string) {
   return data as Destinatario | null;
 }
 
-async function emailDe(sb: SupabaseClient, id: string) {
-  const { data } = await sb.auth.admin.getUserById(id);
+async function emailDe(sb: SupabaseClient, id: string, notas?: string[]) {
+  const { data, error } = await sb.auth.admin.getUserById(id);
   const u = data?.user;
-  if (!u?.email || !u.email_confirmed_at) return null; // sólo cuentas confirmadas
+  if (!u?.email) {
+    notas?.push(`usuario sin email${error ? ": " + error.message : ""}`);
+    return null;
+  }
+  if (!u.email_confirmed_at) {
+    // sólo cuentas confirmadas
+    notas?.push(`${u.email} todavía no confirmó su cuenta`);
+    return null;
+  }
   return u.email;
+}
+
+function nota(notas: string[], texto: string): Mail[] {
+  notas.push(texto);
+  return [];
 }
 
 const env = (k: string) => {
