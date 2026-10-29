@@ -5,15 +5,15 @@ import "./globals.css";
 import { RegistrarSW } from "@/components/Notificaciones";
 
 export const metadata: Metadata = {
-  title: "Manitos · Profesionales para tu casa",
+  title: "Manitos · Tu casa, en buenas manos",
   description:
-    "Pedí plomeros, electricistas y todo tipo de servicios en Córdoba. Recibí presupuestos y elegí el que más te convenga.",
+    "Pedí presupuestos a plomeros, electricistas, gasistas y más profesionales de Córdoba, compará precios y opiniones, y elegí el que más te convenga.",
   appleWebApp: { capable: true, title: "Manitos", statusBarStyle: "default" },
   icons: { icon: "/icono-192.png", apple: "/icono-192.png" },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://manitos-ten.vercel.app"),
   openGraph: {
-    title: "Manitos · Profesionales para tu casa en Córdoba",
-    description: "Pedí presupuestos a plomeros, electricistas, gasistas y más. Compará y elegí el que te conviene.",
+    title: "Manitos · Tu casa, en buenas manos",
+    description: "Pedí presupuestos a profesionales de Córdoba, compará precios y opiniones, y elegí el que más te convenga.",
     images: [{ url: "/og.png", width: 1200, height: 630 }],
     locale: "es_AR",
     type: "website",

@@ -53,12 +53,13 @@ export default function Inicio() {
 
         <div className="contenedor pb-12 pt-12 sm:pt-16">
           <h1 className="font-titulo text-[2.6rem] font-extrabold leading-[1.02] tracking-tight sm:text-6xl">
-            Se rompió algo en casa.
+            Tu casa,
             <br />
-            Te pasan presupuesto, vos elegís.
+            en buenas <span className="text-cinta">manos</span>.
           </h1>
           <p className="mt-5 max-w-md text-lg text-white/80">
-            Plomeros, electricistas, gasistas y más profesionales de Córdoba compiten por tu trabajo. Publicar es gratis.
+            Pedí presupuestos a profesionales de Córdoba, compará precios y opiniones de otros vecinos, y elegí el que más
+            te convenga. Publicar es gratis.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/ingresar?rol=cliente&modo=registro" className="btn-cinta text-base">
@@ -77,7 +78,7 @@ export default function Inicio() {
       </section>
 
       <main className="contenedor py-10">
-        <h2 className="text-2xl font-extrabold tracking-tight">¿Qué necesitás arreglar?</h2>
+        <h2 className="text-2xl font-extrabold tracking-tight">¿Qué necesitás en tu casa?</h2>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {RUBROS.map(([nombre, icono]) => (
             <Link
