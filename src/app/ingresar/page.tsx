@@ -1,10 +1,18 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Encabezado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
 import type { Rol } from "@/lib/types";
+import { borrarBorrador, guardarBorrador, leerBorrador } from "@/lib/borrador";
+
+interface Borrador {
+  modo: "ingreso" | "registro" | "recuperar";
+  rol: Rol;
+  nombre: string;
+  telefono: string;
+  email: string;
+}
 
 function Formulario() {
   const params = useSearchParams();
@@ -20,6 +28,23 @@ function Formulario() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [enviando, setEnviando] = useState(false);
+
+  // Si salió a leer los términos y volvió, recupera lo que había escrito (nunca la contraseña)
+  const [restaurado, setRestaurado] = useState(false);
+  useEffect(() => {
+    const b = leerBorrador<Borrador>("registro");
+    if (b && !params.get("modo")) {
+      if (b.modo) setModo(b.modo);
+      if (b.rol) setRol(b.rol);
+    }
+    if (b?.nombre) setNombre(b.nombre);
+    if (b?.telefono) setTelefono(b.telefono);
+    if (b?.email) setEmail(b.email);
+    setRestaurado(true);
+  }, [params]);
+  useEffect(() => {
+    if (restaurado) guardarBorrador<Borrador>("registro", { modo, rol, nombre, telefono, email });
+  }, [restaurado, modo, rol, nombre, telefono, email]);
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +66,13 @@ function Formulario() {
           options: { data: { nombre, telefono, rol } },
         });
         if (error) setError(traducir(error.message));
-        else if (!data.session) setInfo("Te mandamos un mail para confirmar la cuenta. Abrilo y después ingresá.");
-        else router.replace(rol === "profesional" ? "/perfil?bienvenida=1" : "/panel");
+        else if (!data.session) {
+          borrarBorrador("registro");
+          setInfo("Te mandamos un mail para confirmar la cuenta. Abrilo y después ingresá.");
+        } else {
+          borrarBorrador("registro");
+          router.replace(rol === "profesional" ? "/perfil?bienvenida=1" : "/panel");
+        }
       } else {
         const { error } = await sb.auth.signInWithPassword({ email, password: clave });
         if (error) setError(traducir(error.message));
@@ -130,8 +160,8 @@ function Formulario() {
         {modo === "registro" && (
           <p className="text-xs text-gris">
             Al crear tu cuenta aceptás los{" "}
-            <Link href="/terminos" className="underline">términos y condiciones</Link> y la{" "}
-            <Link href="/privacidad" className="underline">política de privacidad</Link>.
+            <a href="/terminos" target="_blank" rel="noopener" className="underline">términos y condiciones</a> y la{" "}
+            <a href="/privacidad" target="_blank" rel="noopener" className="underline">política de privacidad</a>.
           </p>
         )}
         {error && <p className="aviso-error">{error}</p>}

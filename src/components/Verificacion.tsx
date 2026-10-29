@@ -1,5 +1,5 @@
 "use client";
-import { Hourglass, IdCard } from "lucide-react";
+import { Camera, Hourglass, IdCard, Images } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SelloVerificado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
@@ -174,21 +174,31 @@ function CampoFoto({ etiqueta, archivo, onChange }: { etiqueta: string; archivo:
     setVista(u);
     return () => URL.revokeObjectURL(u);
   }, [archivo]);
+  const recibir = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.files?.[0] ?? null);
+    e.target.value = "";
+  };
   return (
-    <label className="block cursor-pointer">
+    <div>
       <span className="etiqueta">{etiqueta}</span>
-      <span className="grid aspect-[3/2] place-items-center overflow-hidden rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris hover:border-marca hover:text-marca">
+      <span className="grid aspect-[3/2] place-items-center overflow-hidden rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris">
         {vista ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={vista} alt={etiqueta} className="h-full w-full object-cover" />
         ) : (
-          <span>
-            <IdCard className="mx-auto mb-1 h-7 w-7" aria-hidden />
-            Sacar o subir foto
-          </span>
+          <IdCard className="h-8 w-8" aria-hidden />
         )}
       </span>
-      <input type="file" accept="image/*" className="sr-only" onChange={(e) => onChange(e.target.files?.[0] ?? null)} />
-    </label>
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-xs font-semibold">
+        <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-borde bg-white py-2 hover:border-marca hover:text-marca">
+          <Camera className="h-4 w-4" aria-hidden /> Cámara
+          <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={recibir} />
+        </label>
+        <label className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-borde bg-white py-2 hover:border-marca hover:text-marca">
+          <Images className="h-4 w-4" aria-hidden /> Galería
+          <input type="file" accept="image/*" className="sr-only" onChange={recibir} />
+        </label>
+      </div>
+    </div>
   );
 }

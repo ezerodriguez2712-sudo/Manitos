@@ -1,6 +1,6 @@
 "use client";
-import { Camera } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { TomarFoto } from "@/components/TomarFoto";
 import { comprimir, rutaFoto } from "@/lib/imagen";
 import { fotoUrl, supabase } from "@/lib/supabase";
 import { mensajeError } from "@/lib/types";
@@ -111,10 +111,10 @@ export function GaleriaTrabajos({ profesionalId, editable = false }: { profesion
       {editable && fotos.length < MAX && (
         <div className="mt-3">
           {!nueva ? (
-            <label className="btn-sec w-full cursor-pointer py-2.5 text-sm">
-              <Camera className="ico" /> Agregar foto de un trabajo
-              <input type="file" accept="image/*" className="sr-only" onChange={(e) => { setNueva(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-            </label>
+            <div>
+              <p className="mb-2 text-sm font-semibold">Agregar foto de un trabajo</p>
+              <TomarFoto variante="botones" onArchivos={(a) => setNueva(a[0])} />
+            </div>
           ) : (
             <div className="flex gap-3 rounded-xl bg-fondo p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}

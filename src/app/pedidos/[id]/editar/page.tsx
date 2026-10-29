@@ -1,10 +1,10 @@
 "use client";
-import { Camera } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
+import { TomarFoto } from "@/components/TomarFoto";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
 import { comprimir, rutaFoto } from "@/lib/imagen";
@@ -121,22 +121,7 @@ export default function EditarPedido() {
                   <MiniaturaArchivo key={i} archivo={f} onQuitar={() => setNuevas(nuevas.filter((_, j) => j !== i))} />
                 ))}
                 {cantidad < MAX_FOTOS && (
-                  <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris hover:border-marca hover:text-marca">
-                    <span>
-                      <Camera className="mx-auto mb-1 h-6 w-6" aria-hidden />
-                      Agregar
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="sr-only"
-                      onChange={(e) => {
-                        setNuevas([...nuevas, ...Array.from(e.target.files ?? [])].slice(0, MAX_FOTOS - fotos.length));
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
+                  <TomarFoto multiple onArchivos={(a) => setNuevas([...nuevas, ...a].slice(0, MAX_FOTOS - fotos.length))} />
                 )}
               </div>
             </div>

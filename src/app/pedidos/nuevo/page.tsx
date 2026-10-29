@@ -1,9 +1,10 @@
 "use client";
-import { Camera } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
 import { CampoBarrio } from "@/components/Barrios";
+import { TomarFoto } from "@/components/TomarFoto";
+import { borrarBorrador, guardarBorrador, leerBorrador } from "@/lib/borrador";
 import { CampoDireccion } from "@/components/CampoDireccion";
 import { CamposVivienda } from "@/components/CamposVivienda";
 import { describirVivienda, VIVIENDA_VACIA, type Ubicacion, type Vivienda } from "@/lib/mapas";
@@ -15,6 +16,17 @@ import { supabase } from "@/lib/supabase";
 import type { Rubro } from "@/lib/types";
 
 const MAX_FOTOS = 4;
+const CLAVE_BORRADOR = "pedido-nuevo";
+
+interface Borrador {
+  rubroId: number | null;
+  titulo: string;
+  descripcion: string;
+  zona: string;
+  direccion: Ubicacion;
+  vivienda: Vivienda;
+  urgente: boolean;
+}
 
 export default function NuevoPedido() {
   const router = useRouter();
@@ -35,8 +47,28 @@ export default function NuevoPedido() {
   useEffect(() => {
     supabase().from("rubros").select("*").order("nombre").then(({ data }) => setRubros(data ?? []));
   }, []);
+  // Recupera lo que se venía escribiendo (si se salió a la cámara o se recargó la página)
+  const [restaurado, setRestaurado] = useState(false);
   useEffect(() => {
-    if (perfil?.zona) setZona(perfil.zona);
+    const b = leerBorrador<Borrador>(CLAVE_BORRADOR);
+    if (b) {
+      if (b.rubroId) setRubroId(b.rubroId);
+      if (b.titulo) setTitulo(b.titulo);
+      if (b.descripcion) setDescripcion(b.descripcion);
+      if (b.zona) setZona(b.zona);
+      if (b.direccion) setDireccion(b.direccion);
+      if (b.vivienda) setVivienda({ ...VIVIENDA_VACIA, ...b.vivienda });
+      if (b.urgente) setUrgente(true);
+    }
+    setRestaurado(true);
+  }, []);
+  useEffect(() => {
+    if (!restaurado) return;
+    guardarBorrador<Borrador>(CLAVE_BORRADOR, { rubroId, titulo, descripcion, zona, direccion, vivienda, urgente });
+  }, [restaurado, rubroId, titulo, descripcion, zona, direccion, vivienda, urgente]);
+
+  useEffect(() => {
+    if (perfil?.zona) setZona((z) => z || perfil.zona || "");
     if (perfil && perfil.rol !== "cliente") router.replace("/panel");
   }, [perfil, router]);
 
@@ -104,6 +136,7 @@ export default function NuevoPedido() {
       }
     }
     setEnviando(false);
+    borrarBorrador(CLAVE_BORRADOR);
     router.replace(nuevo ? `/pedidos/${nuevo.id}` : "/panel");
   };
 
@@ -159,22 +192,7 @@ export default function NuevoPedido() {
                 </div>
               ))}
               {fotos.length < MAX_FOTOS && (
-                <label className="grid h-20 w-20 cursor-pointer place-items-center rounded-xl border-2 border-dashed border-borde bg-white text-center text-xs font-semibold text-gris hover:border-marca hover:text-marca">
-                  <span>
-                    <Camera className="mx-auto mb-1 h-6 w-6" aria-hidden />
-                    Agregar
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="sr-only"
-                    onChange={(e) => {
-                      setFotos([...fotos, ...Array.from(e.target.files ?? [])].slice(0, MAX_FOTOS));
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
+                <TomarFoto multiple onArchivos={(a) => setFotos([...fotos, ...a].slice(0, MAX_FOTOS))} />
               )}
             </div>
           </div>
