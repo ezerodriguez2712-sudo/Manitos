@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import { mismoBarrio } from "@/lib/barrios";
 import { PIE_AVISOS, plantillaMail } from "@/lib/mails";
 import { pesos } from "@/lib/types";
+import { linkComoLlegar } from "@/lib/mapas";
 
 /**
  * Recibe los avisos que dispara la base de datos (pedido nuevo, presupuesto nuevo,
@@ -164,6 +165,8 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
   const email = await emailDe(sb, pro.id, notas);
   if (!email) return [];
   const cliente = await perfilDe(sb, p.cliente_id);
+  const { data: dir } = await sb.from("pedido_direcciones").select("*").eq("pedido_id", p.id).maybeSingle();
+  const ubic = dir?.direccion ? { texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null;
   return [
     {
       para: email,
@@ -172,7 +175,7 @@ async function armarMails(sb: SupabaseClient, tipo: Tipo, id: number, notas: str
       html: plantillaMail({
         titulo: "¡El cliente eligió tu presupuesto!",
         texto: `${saludo(pro.nombre)}, ${cliente?.nombre ?? "el cliente"} aceptó tu presupuesto de ${pesos(Number(pr.monto))}. Ya podés ver la dirección y coordinar por chat o WhatsApp.`,
-        detalle: `${p.titulo}\n${p.zona}`,
+        detalle: `${p.titulo}\n${ubic ? `${ubic.texto}, ${p.zona}\nCómo llegar: ${linkComoLlegar(ubic, p.zona)}` : p.zona}`,
         boton: "Coordinar el trabajo",
         enlace: `${sitio}/pedidos/${p.id}`,
         pie: PIE_AVISOS,

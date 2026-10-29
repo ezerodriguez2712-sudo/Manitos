@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Azulejo, Cargando, Encabezado } from "@/components/Encabezado";
 import { CampoBarrio } from "@/components/Barrios";
+import { CampoDireccion } from "@/components/CampoDireccion";
+import type { Ubicacion } from "@/lib/mapas";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
@@ -21,7 +23,7 @@ export default function NuevoPedido() {
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [zona, setZona] = useState("");
-  const [direccion, setDireccion] = useState("");
+  const [direccion, setDireccion] = useState<Ubicacion>({ texto: "", lat: null, lng: null });
   const [urgente, setUrgente] = useState(false);
   const [fotos, setFotos] = useState<File[]>([]);
   const [error, setError] = useState("");
@@ -73,8 +75,13 @@ export default function NuevoPedido() {
       .order("creado_en", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (nuevo && direccion.trim())
-      await sb.from("pedido_direcciones").insert({ pedido_id: nuevo.id, direccion: direccion.trim() });
+    if (nuevo && direccion.texto.trim()) {
+      const fila = { pedido_id: nuevo.id, direccion: direccion.texto.trim() };
+      const conPunto = direccion.lat != null ? { ...fila, lat: direccion.lat, lng: direccion.lng } : fila;
+      const { error: eDir } = await sb.from("pedido_direcciones").insert(conPunto);
+      // Si la base todavía no tiene las columnas de mapa, se guarda sólo el texto
+      if (eDir && conPunto !== fila) await sb.from("pedido_direcciones").insert(fila);
+    }
     setEnviando(false);
     router.replace(nuevo ? `/pedidos/${nuevo.id}` : "/panel");
   };
@@ -155,8 +162,8 @@ export default function NuevoPedido() {
             <CampoBarrio valor={zona} onChange={setZona} requerido />
           </div>
           <div>
-            <label className="etiqueta">Dirección (sólo la ve quien elijas)</label>
-            <input className="campo" placeholder="Calle y número" value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+            <label className="etiqueta">Dirección (sólo la ve el profesional que elijas)</label>
+            <CampoDireccion valor={direccion} onChange={setDireccion} barrio={zona} />
           </div>
           <label className="flex items-center gap-3 rounded-xl border border-borde bg-white p-3">
             <input type="checkbox" checked={urgente} onChange={(e) => setUrgente(e.target.checked)} className="h-5 w-5 accent-marca" />

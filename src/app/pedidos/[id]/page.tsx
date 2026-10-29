@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
+import { linkComoLlegar, linkMaps, mapaEmbebido, type Ubicacion } from "@/lib/mapas";
 import { Chat } from "@/components/Chat";
 import { useSesion } from "@/lib/useSesion";
 import { fotoUrl, supabase } from "@/lib/supabase";
@@ -24,7 +25,7 @@ interface Datos {
   cliente: Perfil | null;
   presupuestos: Presupuesto[];
   reputaciones: Record<string, Reputacion>;
-  direccion: string | null;
+  direccion: Ubicacion | null;
   telefonoContraparte: string | null;
   yaCalifique: boolean;
 }
@@ -45,7 +46,7 @@ export default function DetallePedido() {
     const [{ data: cliente }, { data: presupuestos }, { data: dir }, { data: calif }] = await Promise.all([
       sb.from("perfiles").select("*").eq("id", pedido.cliente_id).single(),
       sb.from("presupuestos").select("*, perfiles(*)").eq("pedido_id", id).order("monto"),
-      sb.from("pedido_direcciones").select("direccion").eq("pedido_id", id).maybeSingle(),
+      sb.from("pedido_direcciones").select("*").eq("pedido_id", id).maybeSingle(),
       sb.from("calificaciones").select("id").eq("pedido_id", id).eq("de_id", perfil.id).maybeSingle(),
     ]);
 
@@ -64,7 +65,7 @@ export default function DetallePedido() {
       cliente,
       presupuestos: presupuestos ?? [],
       reputaciones: Object.fromEntries((reps ?? []).map((r) => [r.perfil_id, r])),
-      direccion: dir?.direccion ?? null,
+      direccion: dir?.direccion ? { texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
     });
@@ -139,7 +140,7 @@ function FichaPedido({ d }: { d: Datos }) {
           ))}
         </div>
       )}
-      {d.direccion && <p className="mt-3 text-sm">🏠 <b>{d.direccion}</b></p>}
+      {d.direccion && <MapaDireccion u={d.direccion} barrio={p.zona} />}
     </section>
   );
 }
@@ -442,5 +443,34 @@ function Calificar({
         Enviar calificación
       </button>
     </section>
+  );
+}
+
+/** Dirección del trabajo con mapa y botones de Google Maps (sólo la ven cliente y profesional elegido). */
+function MapaDireccion({ u, barrio }: { u: Ubicacion; barrio: string }) {
+  return (
+    <div className="mt-4 overflow-hidden rounded-xl border border-borde">
+      <iframe
+        title="Mapa de la dirección"
+        src={mapaEmbebido(u, barrio)}
+        className="h-44 w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
+      <div className="space-y-2 bg-fondo/60 p-3">
+        <p className="text-sm">
+          🏠 <b>{u.texto}</b>
+          <span className="text-gris">, {barrio}</span>
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <a href={linkMaps(u, barrio)} target="_blank" rel="noreferrer" className="btn-sec py-2 text-sm">
+            Ver en Maps
+          </a>
+          <a href={linkComoLlegar(u, barrio)} target="_blank" rel="noreferrer" className="btn py-2 text-sm">
+            Cómo llegar
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
