@@ -261,3 +261,41 @@ function explicar(msg: string) {
   if (/timeout|ETIMEDOUT|ECONNREFUSED|ENOTFOUND/i.test(m)) return `${m} → no se pudo conectar con Brevo.`;
   return m;
 }
+
+/**
+ * Chequeo rápido: abrir /api/avisos en el navegador.
+ * Muestra cómo están cargadas las variables (sin revelar claves) y prueba el login en Brevo.
+ */
+export async function GET() {
+  const clave = env("BREVO_SMTP_CLAVE");
+  const service = env("SUPABASE_SERVICE_ROLE_KEY");
+  const datos = {
+    BREVO_SMTP_USUARIO: env("BREVO_SMTP_USUARIO") || "(vacío)",
+    BREVO_SMTP_CLAVE: clave
+      ? `${clave.slice(0, 9)}… (${clave.length} caracteres)${clave.startsWith("xsmtpsib-") ? "" : " ⚠️ debería empezar con xsmtpsib-"}`
+      : "(vacío)",
+    MAIL_REMITENTE: env("MAIL_REMITENTE") || "(vacío)",
+    SUPABASE_SERVICE_ROLE_KEY: service ? `${service.slice(0, 10)}… (${service.length} caracteres)` : "(vacío)",
+  };
+  let brevo = "";
+  try {
+    const t = nodemailer.createTransport({
+      host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+      port: Number(process.env.BREVO_SMTP_PUERTO || 587),
+      secure: false,
+      auth: { user: env("BREVO_SMTP_USUARIO"), pass: clave },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+    await t.verify();
+    brevo = "✅ Brevo aceptó el usuario y la clave";
+  } catch (e) {
+    brevo = "❌ " + explicar(e instanceof Error ? e.message : String(e));
+  }
+  return new NextResponse(
+    `Chequeo de avisos de Manitos\n\nBrevo: ${brevo}\n\nVariables cargadas en Vercel:\n` +
+      Object.entries(datos).map(([k, v]) => `  ${k}: ${v}`).join("\n"),
+    { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+  );
+}
