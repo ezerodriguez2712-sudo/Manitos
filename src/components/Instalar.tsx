@@ -55,7 +55,7 @@ function Paso({ n, icono, children }: { n: number; icono: React.ReactNode; child
 function Instrucciones({ modo, onCerrar }: { modo: ModoInstalar; onCerrar: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-tinta/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-labelledby="titulo-instalar" onClick={onCerrar}>
-      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 text-left text-tinta shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3">
           <Logo grande />
           <div>
