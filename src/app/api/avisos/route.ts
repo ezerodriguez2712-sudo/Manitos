@@ -21,8 +21,13 @@ const MAX_PROFESIONALES = 60; // tope por pedido para cuidar el límite diario d
 type Tipo = "nuevo_pedido" | "nuevo_presupuesto" | "elegido";
 
 export async function POST(req: Request) {
-  const secreto = process.env.AVISOS_SECRETO;
-  if (!secreto || req.headers.get("x-manitos-secreto") !== secreto) {
+  const limpiar = (v?: string | null) => (v ?? "").trim().replace(/^["']|["']$/g, "").replace(/^AVISOS_SECRETO=/, "").trim();
+  const secreto = limpiar(process.env.AVISOS_SECRETO);
+  if (!secreto || limpiar(req.headers.get("x-manitos-secreto")) !== secreto) {
+    console.warn("Aviso rechazado: AVISOS_SECRETO de Vercel no coincide con el de la base", {
+      largoVercel: secreto.length,
+      largoBase: limpiar(req.headers.get("x-manitos-secreto")).length,
+    });
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
