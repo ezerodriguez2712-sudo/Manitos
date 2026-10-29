@@ -191,7 +191,13 @@ async function emailDe(sb: SupabaseClient, id: string) {
   return u.email;
 }
 
-const env = (k: string) => (process.env[k] ?? "").trim().replace(/^["']|["']$/g, "").replace(new RegExp(`^${k}=`), "").trim();
+const env = (k: string) => {
+  let v = (process.env[k] ?? "").trim().replace(/^["']|["']$/g, "").replace(new RegExp(`^${k}=`), "").trim();
+  // En direcciones de mail, un punto o coma al final (típico al copiar de una oración) las invalida
+  if (k === "BREVO_SMTP_USUARIO" || k === "MAIL_REMITENTE") v = v.replace(/[.,;:]+$/, "");
+  return v;
+};
+const pareceMail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 async function enviar(mails: Mail[]) {
   if (!mails.length) return 0;
@@ -274,7 +280,9 @@ export async function GET() {
     BREVO_SMTP_CLAVE: clave
       ? `${clave.slice(0, 9)}… (${clave.length} caracteres)${clave.startsWith("xsmtpsib-") ? "" : " ⚠️ debería empezar con xsmtpsib-"}`
       : "(vacío)",
-    MAIL_REMITENTE: env("MAIL_REMITENTE") || "(vacío)",
+    MAIL_REMITENTE: env("MAIL_REMITENTE")
+      ? env("MAIL_REMITENTE") + (pareceMail(env("MAIL_REMITENTE")) ? "" : " ⚠️ no es un email: poné el remitente verificado en Brevo")
+      : "(vacío)",
     SUPABASE_SERVICE_ROLE_KEY: service ? `${service.slice(0, 10)}… (${service.length} caracteres)` : "(vacío)",
   };
   let brevo = "";
