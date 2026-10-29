@@ -92,3 +92,42 @@ export async function direccionDe(lat: number, lng: number): Promise<string> {
     return "";
   }
 }
+
+/** Datos de la vivienda que complementan la dirección. */
+export type TipoVivienda = "casa" | "departamento" | "barrio_cerrado";
+
+export interface Vivienda {
+  tipo: TipoVivienda;
+  piso: string;
+  depto: string;
+  barrio_cerrado: string;
+  manzana: string;
+  lote: string;
+  referencias: string;
+}
+
+export const VIVIENDA_VACIA: Vivienda = {
+  tipo: "casa",
+  piso: "",
+  depto: "",
+  barrio_cerrado: "",
+  manzana: "",
+  lote: "",
+  referencias: "",
+};
+
+/** "Piso 3, Depto B" / "Barrio cerrado Las Delicias, Manzana 12, Lote 5" (vacío si no hay datos). */
+export function describirVivienda(v: Partial<Vivienda> | null | undefined): string {
+  if (!v) return "";
+  const partes: string[] = [];
+  if (v.tipo === "departamento") {
+    if (v.piso?.trim()) partes.push(`Piso ${v.piso.trim()}`);
+    if (v.depto?.trim()) partes.push(`Depto ${v.depto.trim()}`);
+  }
+  if (v.tipo === "barrio_cerrado") {
+    if (v.barrio_cerrado?.trim()) partes.push(`Barrio cerrado ${v.barrio_cerrado.trim()}`);
+    if (v.manzana?.trim()) partes.push(`Manzana ${v.manzana.trim()}`);
+    if (v.lote?.trim()) partes.push(`Lote ${v.lote.trim()}`);
+  }
+  return partes.join(", ");
+}

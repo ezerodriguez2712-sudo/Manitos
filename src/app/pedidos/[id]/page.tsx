@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, whatsapp } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
-import { linkComoLlegar, linkMaps, mapaEmbebido, type Ubicacion } from "@/lib/mapas";
+import { describirVivienda, linkComoLlegar, linkMaps, mapaEmbebido, type Ubicacion, type Vivienda } from "@/lib/mapas";
 import { Chat } from "@/components/Chat";
 import { useSesion } from "@/lib/useSesion";
 import { fotoUrl, supabase } from "@/lib/supabase";
@@ -25,7 +25,7 @@ interface Datos {
   cliente: Perfil | null;
   presupuestos: Presupuesto[];
   reputaciones: Record<string, Reputacion>;
-  direccion: Ubicacion | null;
+  direccion: (Ubicacion & Partial<Vivienda>) | null;
   telefonoContraparte: string | null;
   yaCalifique: boolean;
 }
@@ -65,7 +65,7 @@ export default function DetallePedido() {
       cliente,
       presupuestos: presupuestos ?? [],
       reputaciones: Object.fromEntries((reps ?? []).map((r) => [r.perfil_id, r])),
-      direccion: dir?.direccion ? { texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
+      direccion: dir?.direccion ? { ...dir, texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
     });
@@ -447,7 +447,8 @@ function Calificar({
 }
 
 /** Dirección del trabajo con mapa y botones de Google Maps (sólo la ven cliente y profesional elegido). */
-function MapaDireccion({ u, barrio }: { u: Ubicacion; barrio: string }) {
+function MapaDireccion({ u, barrio }: { u: Ubicacion & Partial<Vivienda>; barrio: string }) {
+  const extra = describirVivienda(u);
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-borde">
       <iframe
@@ -459,9 +460,11 @@ function MapaDireccion({ u, barrio }: { u: Ubicacion; barrio: string }) {
       />
       <div className="space-y-2 bg-fondo/60 p-3">
         <p className="text-sm">
-          🏠 <b>{u.texto}</b>
+          {u.tipo === "departamento" ? "🏢" : u.tipo === "barrio_cerrado" ? "🏡" : "🏠"} <b>{u.texto}</b>
           <span className="text-gris">, {barrio}</span>
         </p>
+        {extra && <p className="text-sm font-semibold">{extra}</p>}
+        {u.referencias && <p className="text-sm text-gris">📝 {u.referencias}</p>}
         <div className="grid grid-cols-2 gap-2">
           <a href={linkMaps(u, barrio)} target="_blank" rel="noreferrer" className="btn-sec py-2 text-sm">
             Ver en Maps

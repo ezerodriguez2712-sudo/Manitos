@@ -1,4 +1,4 @@
--- MANITOS · Instalación completa (limpieza + esquema + mejoras + avisos + mapas). Se puede ejecutar las veces que haga falta.
+-- MANITOS · Instalación completa (limpieza + esquema + mejoras + avisos + mapa y vivienda). Se puede ejecutar las veces que haga falta.
 -- =====================================================================
 -- MANITOS · Limpieza de la versión anterior
 -- ⚠️ BORRA todas las tablas, vistas y funciones del esquema "public"
@@ -530,11 +530,23 @@ create trigger aviso_pedido_asignado after update on public.pedidos
 select valor as "AVISOS_SECRETO (copialo a Vercel)" from privado.config where clave = 'secreto';
 
 -- =====================================================================
--- MANITOS · Migración 04: ubicación en el mapa de la dirección del trabajo
--- Se puede correr más de una vez. No borra datos.
+-- MANITOS · Migraciones 04 + 05: mapa y datos de la vivienda
+-- (incluye la 04 por si todavía no la corriste). Se puede correr más de una vez.
 -- =====================================================================
 alter table public.pedido_direcciones add column if not exists lat double precision;
 alter table public.pedido_direcciones add column if not exists lng double precision;
+
+alter table public.pedido_direcciones add column if not exists tipo text not null default 'casa';
+alter table public.pedido_direcciones add column if not exists piso text;
+alter table public.pedido_direcciones add column if not exists depto text;
+alter table public.pedido_direcciones add column if not exists barrio_cerrado text;
+alter table public.pedido_direcciones add column if not exists manzana text;
+alter table public.pedido_direcciones add column if not exists lote text;
+alter table public.pedido_direcciones add column if not exists referencias text;
+
+alter table public.pedido_direcciones drop constraint if exists pedido_direcciones_tipo_check;
+alter table public.pedido_direcciones add constraint pedido_direcciones_tipo_check
+  check (tipo in ('casa', 'departamento', 'barrio_cerrado'));
 
 -- El cliente puede corregir la dirección de su pedido
 drop policy if exists "dir_editar" on public.pedido_direcciones;
