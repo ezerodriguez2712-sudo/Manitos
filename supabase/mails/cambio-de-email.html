@@ -1,23 +1,23 @@
 <!doctype html>
 <html lang="es">
-<body style="margin:0;padding:0;background:#edf1f7;font-family:Arial,Helvetica,sans-serif;color:#13213f;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#edf1f7;padding:24px 12px;">
+<body style="margin:0;padding:0;background:#f3f5f8;font-family:Arial,Helvetica,sans-serif;color:#14203a;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f5f8;padding:24px 12px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #d6deeb;">
-        <tr><td style="background:#1f4fd1;padding:18px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #dde2ea;">
+        <tr><td style="background:#1e3a6b;padding:18px 24px;">
           <span style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">Manitos</span>
         </td></tr>
-        <tr><td style="height:8px;background:#ffc21a;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr><td style="height:8px;background:#f5b800;font-size:0;line-height:0;">&nbsp;</td></tr>
         <tr><td style="padding:28px 24px 8px;">
-          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;color:#13213f;">Confirmá tu nuevo email</h1>
-          <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#5b6782;">Pediste cambiar el email de tu cuenta de Manitos a {{ .NewEmail }}. Confirmalo con el botón.</p>
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#ffc21a;border-radius:12px;">
-            <a href="{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change" style="display:inline-block;padding:14px 26px;font-size:16px;font-weight:700;color:#13213f;text-decoration:none;">Confirmar nuevo email</a>
+          <h1 style="margin:0 0 12px;font-size:24px;line-height:1.2;color:#14203a;">Confirmá tu nuevo email</h1>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.5;color:#5a6478;">Pediste cambiar el email de tu cuenta de Manitos a {{ .NewEmail }}. Confirmalo con el botón.</p>
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#f5b800;border-radius:12px;">
+            <a href="{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change" style="display:inline-block;padding:14px 26px;font-size:16px;font-weight:700;color:#14203a;text-decoration:none;">Confirmar nuevo email</a>
           </td></tr></table>
-          <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#5b6782;">Si el botón no funciona, copiá este enlace en el navegador:<br>
-            <a href="{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change" style="color:#1f4fd1;word-break:break-all;">{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change</a></p>
+          <p style="margin:24px 0 0;font-size:13px;line-height:1.5;color:#5a6478;">Si el botón no funciona, copiá este enlace en el navegador:<br>
+            <a href="{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change" style="color:#1e3a6b;word-break:break-all;">{{ .SiteURL }}/confirmar?token_hash={{ .TokenHash }}&type=email_change</a></p>
         </td></tr>
-        <tr><td style="padding:20px 24px 24px;font-size:12px;line-height:1.5;color:#5b6782;border-top:1px solid #edf1f7;">
+        <tr><td style="padding:20px 24px 24px;font-size:12px;line-height:1.5;color:#5a6478;border-top:1px solid #f3f5f8;">
           Si no lo pediste vos, ignorá este mail y tu email no cambia.<br>Manitos · Profesionales para tu casa en Córdoba
         </td></tr>
       </table>
