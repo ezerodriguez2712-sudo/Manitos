@@ -98,7 +98,7 @@ export function urlSupabase() {
 }
 
 export function urlSitio() {
-  return (process.env.NEXT_PUBLIC_SITE_URL || "https://manitos-ten.vercel.app").replace(/\/+$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL || "https://www.manitos.com.ar").replace(/\/+$/, "");
 }
 
 export const saludo = (n?: string | null) => {

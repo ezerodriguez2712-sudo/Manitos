@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "Pedí presupuestos a plomeros, electricistas, gasistas y más profesionales de Córdoba, compará precios y opiniones, y elegí el que más te convenga.",
   appleWebApp: { capable: true, title: "Manitos", statusBarStyle: "default" },
   icons: { icon: "/icono-192.png", apple: "/icono-192.png" },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://manitos-ten.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.manitos.com.ar"),
   openGraph: {
     title: "Manitos · Tu casa, en buenas manos",
     description: "Pedí presupuestos a profesionales de Córdoba, compará precios y opiniones, y elegí el que más te convenga.",
