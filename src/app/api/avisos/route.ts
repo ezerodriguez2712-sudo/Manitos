@@ -45,7 +45,8 @@ type Tipo = (typeof TIPOS)[number];
 /** Un aviso para una persona: mail, notificación push o los dos. */
 interface Aviso {
   perfil: Destinatario;
-  mail?: { asunto: string; html: string; siempre?: boolean };
+  /** soloSinPush: si la notificación push le llegó al celular, no se manda el mail (ahorra el cupo de Brevo) */
+  mail?: { asunto: string; html: string; siempre?: boolean; soloSinPush?: boolean };
   push?: Push;
 }
 
@@ -82,10 +83,25 @@ export async function POST(req: Request) {
     const notas: string[] = [];
     const avisos = await armarAvisos(sb, tipo, id, notas);
 
+    // Notificaciones push primero (son gratis e ilimitadas)
+    let push = 0;
+    const conPush = new Set<string>();
+    for (const a of avisos) {
+      if (!a.push || a.perfil.avisos_push === false) continue;
+      const n = await enviarPush(sb, [a.perfil.id], a.push);
+      push += n;
+      if (n > 0) conPush.add(a.perfil.id);
+    }
+
     // Mails (respetando la preferencia de cada uno)
     const mails: Mail[] = [];
+    let ahorrados = 0;
     for (const a of avisos) {
       if (!a.mail) continue;
+      if (a.mail.soloSinPush && conPush.has(a.perfil.id)) {
+        ahorrados++;
+        continue;
+      }
       if (!a.mail.siempre && a.perfil.avisos_mail === false) {
         notas.push(`${a.perfil.nombre || "usuario"} tiene los mails apagados`);
         continue;
@@ -94,14 +110,7 @@ export async function POST(req: Request) {
       if (email) mails.push({ para: email, nombre: a.perfil.nombre, asunto: a.mail.asunto, html: a.mail.html });
     }
     const enviados = await enviar(mails);
-
-    // Notificaciones push
-    let push = 0;
-    for (const a of avisos) {
-      if (!a.push || a.perfil.avisos_push === false) continue;
-      push += await enviarPush(sb, [a.perfil.id], a.push);
-    }
-    return NextResponse.json({ ok: true, enviados, push, ...(notas.length ? { notas } : {}) });
+    return NextResponse.json({ ok: true, enviados, push, ...(ahorrados ? { mails_ahorrados: ahorrados } : {}), ...(notas.length ? { notas } : {}) });
   } catch (e) {
     // Si falla, se libera para poder reintentar
     await sb.from("avisos_enviados").delete().eq("tipo", tipo).eq("ref_id", id);
@@ -135,6 +144,7 @@ async function armarAvisos(sb: SupabaseClient, tipo: Tipo, id: number, notas: st
     return candidatos.map((pro) => ({
       perfil: pro,
       mail: {
+        soloSinPush: true,
         asunto: `${urgente}Pedido de ${rubro} en ${p.zona}`,
         html: plantillaMail({
           titulo: `${urgente}nuevo pedido de ${rubro.toLowerCase()}`,
