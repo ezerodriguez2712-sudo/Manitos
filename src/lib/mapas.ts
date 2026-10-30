@@ -37,7 +37,9 @@ interface FeaturePhoton {
     locality?: string;
     city?: string;
     county?: string;
+    osm_key?: string;
     osm_value?: string;
+    type?: string;
   };
 }
 
@@ -45,49 +47,107 @@ export interface Sugerencia extends Ubicacion {
   detalle: string;
 }
 
-function aSugerencia(f: FeaturePhoton): Sugerencia {
-  const p = f.properties;
-  const calle = p.street ? `${p.street}${p.housenumber ? " " + p.housenumber : ""}` : p.name ?? "";
-  const lugar = p.name && p.street && p.name !== p.street ? p.name : "";
-  const zona = p.district || p.locality || p.city || p.county || "";
-  const [lng, lat] = f.geometry.coordinates;
-  return {
-    texto: [lugar, calle].filter(Boolean).join(", ") || zona,
-    detalle: [zona, p.city && p.city !== zona ? p.city : ""].filter(Boolean).join(", "),
-    lat,
-    lng,
-  };
+/** Sin acentos ni mayúsculas, para comparar nombres. */
+const plano = (t?: string) =>
+  (t ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** "Av. Colón" → "Avenida Colón", "Bv San Juan" → "Boulevard San Juan", etc. (mejora la búsqueda) */
+const expandir = (t: string) =>
+  t
+    .replace(/\b(av|avda|avd)\b\.?\s*/gi, "Avenida ")
+    .replace(/\b(bv|bvd|bvard|bulevar|blvd)\b\.?\s*/gi, "Boulevard ")
+    .replace(/\bgral\b\.?\s*/gi, "General ")
+    .replace(/\bpje\b\.?\s*/gi, "Pasaje ")
+    .replace(/\bdr\b\.?\s*/gi, "Doctor ")
+    .replace(/\bpte\b\.?\s*/gi, "Presidente ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** Separa la calle de la altura: "colon al 2100" → { calle: "colon", numero: "2100" } */
+export function separarAltura(texto: string): { calle: string; numero: string } {
+  const t = texto.trim();
+  const m = t.match(/^(.*?)(?:\s+(?:al|nro\.?|n°|nº|#))?\s+(\d{1,5})\s*(?:[a-z]\b)?\s*$/i);
+  // Calles con número en el nombre ("27 de Abril", "9 de Julio"): sólo es altura si va al final
+  if (m && m[1].trim().length >= 3) return { calle: m[1].trim().replace(/[,\s]+$/, ""), numero: m[2] };
+  return { calle: t, numero: "" };
 }
 
-/** Sugerencias de direcciones en Córdoba mientras el usuario escribe. */
-export async function buscarDirecciones(texto: string, senal?: AbortSignal): Promise<Sugerencia[]> {
-  const q = texto.trim();
-  if (q.length < 4) return [];
+const NO_CALLE = /^(plaza|puente|rotonda|parque|paseo del|fuente|estaci[oó]n|galer[ií]a|shopping|centro comercial)\b/i;
+
+/**
+ * Sugerencias de calles de Córdoba mientras el usuario escribe.
+ * Busca sólo calles (no paradas de colectivo ni comercios), con el nombre bien escrito
+ * (con tildes y "Avenida" completo), y le agrega la altura que escribió el usuario.
+ * Las coordenadas quedan vacías: Google Maps ubica mejor "calle + número + barrio".
+ */
+export async function buscarDirecciones(texto: string, barrio?: string, senal?: AbortSignal): Promise<Sugerencia[]> {
+  const { calle, numero } = separarAltura(texto);
+  const q = expandir(calle);
+  if (q.length < 3) return [];
   const url =
-    `https://photon.komoot.io/api/?q=${encodeURIComponent(q + " Córdoba")}` +
-    `&bbox=${BBOX_CORDOBA}&lat=${CENTRO.lat}&lon=${CENTRO.lng}&limit=6`;
+    `https://photon.komoot.io/api/?q=${encodeURIComponent(q + ", Córdoba")}` +
+    `&bbox=${BBOX_CORDOBA}&lat=${CENTRO.lat}&lon=${CENTRO.lng}&limit=12&layer=street`;
   const r = await fetch(url, { signal: senal });
   if (!r.ok) return [];
   const j = (await r.json()) as { features?: FeaturePhoton[] };
-  const vistas = new Set<string>();
-  return (j.features ?? [])
-    .map(aSugerencia)
-    .filter((s) => {
-      const k = `${s.texto}|${s.detalle}`;
-      if (!s.texto || vistas.has(k)) return false;
-      vistas.add(k);
-      return true;
+  const b = plano(barrio);
+
+  // Agrupa los tramos de la misma calle (una avenida larga viene partida por barrio)
+  const grupos = new Map<string, { nombre: string; ciudad: string; barrios: string[]; orden: number }>();
+  (j.features ?? []).forEach((f, i) => {
+    const p = f.properties;
+    const nombre = (p.name ?? p.street ?? "").trim();
+    if (!nombre || NO_CALLE.test(nombre) || / y (avenida|calle|boulevard)\b/i.test(nombre)) return;
+    const ciudad = p.city || p.locality || p.county || "";
+    const clave = `${plano(nombre)}|${plano(ciudad)}`;
+    const g = grupos.get(clave) ?? { nombre, ciudad, barrios: [], orden: i };
+    if (p.district && !g.barrios.includes(p.district)) g.barrios.push(p.district);
+    grupos.set(clave, g);
+  });
+
+  const esCordoba = (c: string) => plano(c) === "cordoba";
+  return [...grupos.values()]
+    .sort((x, y) => {
+      // Primero las del barrio elegido, después Córdoba capital, después el resto
+      const bx = b && x.barrios.some((d) => plano(d) === b) ? 0 : 1;
+      const by = b && y.barrios.some((d) => plano(d) === b) ? 0 : 1;
+      if (bx !== by) return bx - by;
+      if (esCordoba(x.ciudad) !== esCordoba(y.ciudad)) return esCordoba(x.ciudad) ? -1 : 1;
+      return x.orden - y.orden;
+    })
+    .slice(0, 6)
+    .map((g) => {
+      const enBarrio = b ? g.barrios.find((d) => plano(d) === b) : undefined;
+      const zona = enBarrio ?? (g.barrios.length === 1 ? g.barrios[0] : "");
+      return {
+        texto: numero ? `${g.nombre} ${numero}` : g.nombre,
+        detalle: [zona, g.ciudad].filter(Boolean).join(", "),
+        lat: null,
+        lng: null,
+      };
     });
 }
 
 /** Dirección aproximada de unas coordenadas (para "usar mi ubicación"). */
 export async function direccionDe(lat: number, lng: number): Promise<string> {
   try {
-    const r = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&limit=1`);
+    const r = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&limit=5`);
     if (!r.ok) return "";
     const j = (await r.json()) as { features?: FeaturePhoton[] };
-    const f = j.features?.[0];
-    return f ? aSugerencia(f).texto : "";
+    const fs = j.features ?? [];
+    // Preferir una dirección con número; si no, el nombre de la calle (nunca comercios ni paradas)
+    const conNumero = fs.find((f) => f.properties.street && f.properties.housenumber);
+    if (conNumero) return `${conNumero.properties.street} ${conNumero.properties.housenumber}`;
+    const calle = fs.find((f) => f.properties.type === "street" && f.properties.name);
+    if (calle) return calle.properties.name!;
+    const conCalle = fs.find((f) => f.properties.street);
+    return conCalle?.properties.street ?? "";
   } catch {
     return "";
   }

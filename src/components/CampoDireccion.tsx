@@ -1,7 +1,7 @@
 "use client";
 import { LocateFixed, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { buscarDirecciones, direccionDe, linkMaps, type Sugerencia, type Ubicacion } from "@/lib/mapas";
+import { buscarDirecciones, direccionDe, linkMaps, separarAltura, type Sugerencia, type Ubicacion } from "@/lib/mapas";
 
 /**
  * Dirección con sugerencias de Córdoba, botón "usar mi ubicación" y link a Google Maps.
@@ -38,7 +38,7 @@ export function CampoDireccion({
     const t = setTimeout(async () => {
       setBuscando(true);
       try {
-        const s = await buscarDirecciones(barrio ? `${q} ${barrio}` : q, ctrl.signal);
+        const s = await buscarDirecciones(q, barrio, ctrl.signal);
         setSugerencias(s);
         setAbierto(true);
       } catch {
@@ -53,12 +53,23 @@ export function CampoDireccion({
     };
   }, [valor.texto, barrio]);
 
+  const entrada = useRef<HTMLInputElement>(null);
   const elegir = (s: Sugerencia) => {
     elegido.current = true;
-    onChange({ texto: s.texto, lat: s.lat, lng: s.lng });
+    // Si eligió la calle sin altura, deja el cursor al final para que escriba el número
+    const texto = separarAltura(s.texto).numero ? s.texto : s.texto + " ";
+    onChange({ texto, lat: s.lat, lng: s.lng });
     setAbierto(false);
     setSugerencias([]);
+    setTimeout(() => {
+      const el = entrada.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(texto.length, texto.length);
+      }
+    }, 0);
   };
+  const faltaAltura = valor.texto.trim().length > 3 && !separarAltura(valor.texto).numero && !/\b(s\/n|sin n)/i.test(valor.texto);
 
   const usarMiUbicacion = () => {
     setAviso("");
@@ -86,6 +97,7 @@ export function CampoDireccion({
   return (
     <div className="relative">
       <input
+        ref={entrada}
         className="campo"
         placeholder="Calle y número, ej: Av. Colón 2100"
         autoComplete="off"
@@ -134,6 +146,9 @@ export function CampoDireccion({
         )}
       </div>
       {conPunto && <p className="mt-1 text-xs text-green-700">Ubicación marcada en el mapa.</p>}
+      {!conPunto && faltaAltura && !abierto && (
+        <p className="mt-1 text-xs text-amber-700">Agregá la altura (el número de la casa) para que el profesional te encuentre.</p>
+      )}
       {aviso && <p className="mt-1 text-xs text-red-600">{aviso}</p>}
     </div>
   );
