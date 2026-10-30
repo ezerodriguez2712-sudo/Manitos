@@ -2,6 +2,6 @@
 export const CONFIG = {
   nombre: "Manitos",
   ciudad: "Córdoba, Argentina",
-  emailContacto: "", // ej: "hola@manitos.com.ar"
-  actualizado: "26 de octubre de 2026",
+  emailContacto: "ezerodriguez2712@gmail.com", // más adelante: contacto@manitos.com.ar
+  actualizado: "30 de octubre de 2026",
 };

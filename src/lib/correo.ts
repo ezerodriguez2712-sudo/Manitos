@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { CONFIG } from "@/lib/config";
 
 /** Funciones de servidor compartidas para mandar mails con Brevo. */
 
@@ -72,7 +73,7 @@ export async function enviar(mails: Mail[]) {
           subject: m.asunto,
           html: m.html,
           // Si alguien responde un aviso, la respuesta llega a este mail (opcional)
-          ...(env("MAIL_RESPUESTA") ? { replyTo: env("MAIL_RESPUESTA") } : {}),
+          ...(env("MAIL_RESPUESTA") || CONFIG.emailContacto ? { replyTo: env("MAIL_RESPUESTA") || CONFIG.emailContacto } : {}),
         })
       )
     );

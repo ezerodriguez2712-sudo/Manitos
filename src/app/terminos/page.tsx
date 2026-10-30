@@ -59,7 +59,7 @@ export default function Terminos() {
       <h2>Cambios</h2>
       <p>
         Podemos actualizar estos términos. Si el cambio es importante, te lo vamos a avisar dentro de la app.
-        {CONFIG.emailContacto && <> Para consultas escribinos a {CONFIG.emailContacto}.</>}
+        {CONFIG.emailContacto && <> Para consultas escribinos a <a href={`mailto:${CONFIG.emailContacto}`} className="underline">{CONFIG.emailContacto}</a>.</>}
       </p>
     </PaginaLegal>
   );

@@ -63,7 +63,7 @@ export default function Privacidad() {
         Podés ver y corregir tus datos desde tu perfil, y pedir el acceso, la corrección o la eliminación de
         tu cuenta y tus datos en cualquier momento. Para borrar tu cuenta y todos tus datos al instante, entrá a
         Perfil → “Borrar mi cuenta”.
-        {CONFIG.emailContacto && <> Escribinos a {CONFIG.emailContacto}.</>} La Agencia de Acceso a la
+        {CONFIG.emailContacto && <> Escribinos a <a href={`mailto:${CONFIG.emailContacto}`} className="underline">{CONFIG.emailContacto}</a>.</>} La Agencia de Acceso a la
         Información Pública es el órgano de control de la Ley 25.326.
       </p>
     </PaginaLegal>
