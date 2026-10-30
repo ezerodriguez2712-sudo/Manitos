@@ -70,7 +70,7 @@ function Instrucciones({ modo, onCerrar }: { modo: ModoInstalar; onCerrar: () =>
             </p>
             <ol className="space-y-2">
               <Paso n={1} icono={<Compass className="h-5 w-5 text-marca" />}>
-                Abrí <b>manitos-ten.vercel.app</b> en Safari.
+                Abrí <b>{typeof window !== "undefined" ? window.location.host : "Manitos"}</b> en Safari.
               </Paso>
               <Paso n={2} icono={<IconoCompartir />}>
                 Tocá <b>Compartir</b> en la barra de abajo.

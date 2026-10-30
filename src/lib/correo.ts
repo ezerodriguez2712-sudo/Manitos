@@ -43,7 +43,7 @@ export async function emailDe(sb: SupabaseClient, id: string, notas?: string[]) 
 export const env = (k: string) => {
   let v = (process.env[k] ?? "").trim().replace(/^["']|["']$/g, "").replace(new RegExp(`^${k}=`), "").trim();
   // En direcciones de mail, un punto o coma al final (típico al copiar de una oración) las invalida
-  if (k === "BREVO_SMTP_USUARIO" || k === "MAIL_REMITENTE") v = v.replace(/[.,;:]+$/, "");
+  if (k === "BREVO_SMTP_USUARIO" || k === "MAIL_REMITENTE" || k === "MAIL_RESPUESTA") v = v.replace(/[.,;:]+$/, "");
   return v;
 };
 export const pareceMail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -71,6 +71,8 @@ export async function enviar(mails: Mail[]) {
           to: m.nombre ? { name: m.nombre, address: m.para } : m.para,
           subject: m.asunto,
           html: m.html,
+          // Si alguien responde un aviso, la respuesta llega a este mail (opcional)
+          ...(env("MAIL_RESPUESTA") ? { replyTo: env("MAIL_RESPUESTA") } : {}),
         })
       )
     );
