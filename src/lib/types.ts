@@ -132,7 +132,7 @@ export const tieneContacto = (t: string) =>
 
 /** Muestra los mensajes propios de la base (límites, reglas); si no, el texto genérico. */
 export const mensajeError = (e: { message?: string } | null | undefined, generico: string) =>
-  e?.message && /^(Llegaste|Tenés|Estás|Sólo se puede|Tu cuenta)/.test(e.message) ? e.message : generico;
+  e?.message && /^(Llegaste|Tenés|Estás|Sólo se puede|Tu cuenta|Usaste)/.test(e.message) ? e.message : generico;
 
 export interface Respuesta {
   perfil_id: string;

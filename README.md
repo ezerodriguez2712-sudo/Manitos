@@ -77,7 +77,13 @@ Supabase → SQL Editor: ejecutá `supabase/migracion-09-trabajos.sql` (después
 - Llegan push de: pedido nuevo (profesionales), presupuesto, preguntas y respuestas, te eligieron, trabajo terminado, verificación y **mensajes del chat**.
 - El profesional ve en su panel una guía con los pasos para completar su perfil.
 
-### 9. Instalar en el celular
+### 9. Plan Gratis + Pro (MercadoPago)
+1. Supabase → SQL Editor: ejecutá `supabase/migracion-12-plan-pro.sql`. Queda **apagado**: todo gratis y sin límites.
+2. Para cobrar: MercadoPago → Tus integraciones → crear aplicación → copiar el **Access Token de producción** a Vercel como `MP_ACCESS_TOKEN` (Sensitive) y Redeploy.
+3. En MercadoPago → Webhooks: URL `https://www.manitos.com.ar/api/mercadopago`, evento **Planes y suscripciones**. Opcional: la clave secreta del webhook en Vercel como `MP_WEBHOOK_SECRET`.
+4. Panel de administrador → **Cobros**: precio, presupuestos gratis por mes, días de prueba y **Activar cobro**.
+
+### 10. Instalar en el celular
 Abrí la URL en Chrome (Android) o Safari (iPhone) → *Agregar a pantalla de inicio*.
 
 ## Desarrollo local

@@ -12,6 +12,7 @@ import { PieLegal } from "@/components/Legal";
 import { BorrarCuenta } from "@/components/BorrarCuenta";
 import { FilaNotificaciones } from "@/components/Notificaciones";
 import { FilaInstalar } from "@/components/Instalar";
+import { FilaPlan } from "@/components/FilaPlan";
 import { useAvisos } from "@/lib/useAvisos";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
@@ -144,6 +145,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           Ver mi perfil como lo ven los clientes
         </Link>
       )}
+      {esPro && <FilaPlan />}
       {esPro && <Verificacion perfil={perfil} />}
       {esPro && (
         <div id="trabajos" className="mt-3 scroll-mt-20">

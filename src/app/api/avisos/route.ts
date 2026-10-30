@@ -402,6 +402,9 @@ export async function GET(req: Request) {
         ? `cargada (${env("VAPID_PRIVATE_KEY").length} caracteres)`
         : "⚠️ cargada pero no es válida"
       : "(vacía) ⚠️ sin esto no salen las notificaciones push",
+    MP_ACCESS_TOKEN: env("MP_ACCESS_TOKEN")
+      ? `${env("MP_ACCESS_TOKEN").slice(0, 8)}… (${env("MP_ACCESS_TOKEN").length} caracteres)`
+      : "(vacía) · hace falta para cobrar el plan Pro",
   };
   let brevoOk = false;
   let brevo = "";

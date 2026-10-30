@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Cargando, Encabezado, EstadoChip } from "@/components/Encabezado";
 import { useSesion } from "@/lib/useSesion";
 import { supabase } from "@/lib/supabase";
-import { ESTADO_LABEL, fecha, hace, type EstadoPedido } from "@/lib/types";
+import { ESTADO_LABEL, fecha, hace, pesos, type EstadoPedido } from "@/lib/types";
 
 /* ---------------- Tipos de lo que devuelve la base ---------------- */
 interface Semana {
@@ -67,7 +67,7 @@ interface PedidoAdmin {
   presupuestos: number;
 }
 
-type Seccion = "indicadores" | "usuarios" | "pedidos" | "verificacion" | "mails";
+type Seccion = "indicadores" | "usuarios" | "pedidos" | "verificacion" | "cobros" | "mails";
 
 const num = (n: number | null | undefined, sufijo = "") => (n == null ? "—" : `${n.toLocaleString("es-AR")}${sufijo}`);
 
@@ -109,6 +109,7 @@ export default function PaginaAdmin() {
     { valor: "usuarios", texto: "Usuarios" },
     { valor: "pedidos", texto: "Pedidos" },
     { valor: "verificacion", texto: "Verificación" },
+    { valor: "cobros", texto: "Cobros" },
     { valor: "mails", texto: "Mails" },
   ];
 
@@ -143,6 +144,7 @@ export default function PaginaAdmin() {
         {seccion === "usuarios" && <Usuarios miId={perfil.id} />}
         {seccion === "pedidos" && <Pedidos />}
         {seccion === "verificacion" && <Verificaciones alCambiar={contarPendientes} />}
+        {seccion === "cobros" && <Cobros />}
         {seccion === "mails" && <ChequeoMails />}
       </main>
     </>
@@ -678,6 +680,202 @@ function TarjetaVerificacion({ v, alListo }: { v: VerifAdmin; alListo: () => voi
       )}
       {error && <p className="aviso-error mt-2">{error}</p>}
     </li>
+  );
+}
+
+/* ---------------- Cobros (plan Gratis + Pro) ---------------- */
+interface Ajustes {
+  cobro_activo: boolean;
+  presupuestos_gratis: number;
+  precio_pro: number | null;
+  dias_prueba: number;
+}
+interface SuscripcionAdmin {
+  perfil_id: string;
+  nombre: string;
+  email: string | null;
+  estado: string;
+  es_pro: boolean;
+  prueba_hasta: string | null;
+  proximo_cobro: string | null;
+  monto: number | null;
+  usados_mes: number;
+}
+const ESTADO_SUSC: Record<string, string> = {
+  prueba: "Prueba gratis",
+  pendiente: "Esperando pago",
+  activa: "Pagando",
+  pausada: "Pausada (no pudo cobrar)",
+  cancelada: "Cancelada",
+};
+
+function Cobros() {
+  const [a, setA] = useState<Ajustes | null>(null);
+  const [lista, setLista] = useState<SuscripcionAdmin[]>([]);
+  const [precio, setPrecio] = useState("");
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [regalo, setRegalo] = useState("");
+
+  const cargar = useCallback(async () => {
+    const sb = supabase();
+    const [{ data: aj, error: e1 }, { data: ls }, { data: us }] = await Promise.all([
+      sb.from("ajustes").select("*").eq("id", 1).maybeSingle(),
+      sb.rpc("admin_suscripciones"),
+      sb.rpc("admin_usuarios", { p_buscar: null }),
+    ]);
+    if (e1 || !aj) return setError("Falta correr supabase/migracion-12-plan-pro.sql en Supabase.");
+    setA(aj as Ajustes);
+    setPrecio(aj.precio_pro ? String(Math.round(aj.precio_pro)) : "");
+    setLista((ls as SuscripcionAdmin[]) ?? []);
+    setUsuarios(((us as Usuario[]) ?? []).filter((u) => u.rol === "profesional"));
+  }, []);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  if (error && !a) return <p className="aviso-error mt-5">{error}</p>;
+  if (!a) return <Esqueleto />;
+
+  const guardar = async (cambios: Partial<Ajustes>) => {
+    const nuevo = { ...a, ...cambios, precio_pro: precio ? Number(precio) : null };
+    if (cambios.cobro_activo === true &&
+        !confirm(`¿Activar el cobro?\n\nDesde ahora, los profesionales sin Pro van a tener ${nuevo.presupuestos_gratis} presupuestos gratis por mes, y Pro va a costar ${nuevo.precio_pro ? pesos(nuevo.precio_pro) : "—"} por mes.`))
+      return;
+    setGuardando(true);
+    setError("");
+    setOk("");
+    const { error } = await supabase().rpc("admin_guardar_ajustes", {
+      p_cobro_activo: nuevo.cobro_activo,
+      p_gratis: nuevo.presupuestos_gratis,
+      p_precio: nuevo.precio_pro,
+      p_dias: nuevo.dias_prueba,
+    });
+    setGuardando(false);
+    if (error) return setError(error.message);
+    setOk("Guardado.");
+    cargar();
+  };
+
+  const pagando = lista.filter((s) => s.estado === "activa");
+  const enPrueba = lista.filter((s) => s.estado !== "activa" && s.es_pro);
+
+  return (
+    <div className="mt-5 space-y-5">
+      <section className={`tarjeta ${a.cobro_activo ? "border-green-300" : "border-amber-300 bg-amber-50"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-titulo text-lg font-bold">{a.cobro_activo ? "Cobro activado" : "Cobro apagado"}</p>
+            <p className="text-sm text-gris">
+              {a.cobro_activo
+                ? "Los profesionales sin Pro tienen un límite de presupuestos por mes."
+                : "Todo es gratis y sin límites. Los profesionales no ven nada de planes."}
+            </p>
+          </div>
+          <button
+            onClick={() => guardar({ cobro_activo: !a.cobro_activo })}
+            disabled={guardando}
+            className={a.cobro_activo ? "btn-sec" : "btn"}
+          >
+            {a.cobro_activo ? "Apagar cobro" : "Activar cobro"}
+          </button>
+        </div>
+      </section>
+
+      <section className="tarjeta space-y-4">
+        <h2 className="font-titulo text-lg font-bold">Reglas del plan</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label className="etiqueta" htmlFor="gratis">Presupuestos gratis por mes</label>
+            <input id="gratis" type="number" min={0} className="campo" value={a.presupuestos_gratis}
+              onChange={(e) => setA({ ...a, presupuestos_gratis: Number(e.target.value) })} />
+          </div>
+          <div>
+            <label className="etiqueta" htmlFor="precio">Precio Pro por mes ($)</label>
+            <input id="precio" inputMode="numeric" className="campo" placeholder="Ej: 9000" value={precio}
+              onChange={(e) => setPrecio(e.target.value.replace(/\D/g, ""))} />
+          </div>
+          <div>
+            <label className="etiqueta" htmlFor="prueba">Días de prueba gratis</label>
+            <input id="prueba" type="number" min={0} max={90} className="campo" value={a.dias_prueba}
+              onChange={(e) => setA({ ...a, dias_prueba: Number(e.target.value) })} />
+          </div>
+        </div>
+        <button onClick={() => guardar({})} disabled={guardando} className="btn">Guardar reglas</button>
+        <p className="text-xs text-gris">
+          Un cambio de precio vale para las suscripciones nuevas. Las que ya están pagando siguen con el precio con el que se suscribieron.
+        </p>
+        {error && <p className="aviso-error">{error}</p>}
+        {ok && <p className="text-sm font-semibold text-green-700">{ok}</p>}
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
+        <Dato titulo="Pagando" valor={num(pagando.length)} detalle="suscripciones activas" />
+        <Dato titulo="En prueba" valor={num(enPrueba.length)} detalle="con Pro gratis vigente" />
+        <Dato
+          titulo="Ingreso mensual"
+          valor={pesos(pagando.reduce((t, s) => t + Number(s.monto ?? 0), 0))}
+          detalle="estimado, antes de comisiones"
+        />
+      </section>
+
+      <section className="tarjeta">
+        <h2 className="font-titulo text-lg font-bold">Regalar Pro</h2>
+        <p className="text-sm text-gris">Útil para premiar a los primeros profesionales del piloto.</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <select className="campo flex-1" value={regalo} onChange={(e) => setRegalo(e.target.value)} aria-label="Profesional">
+            <option value="">Elegí un profesional…</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>{u.nombre || u.email}</option>
+            ))}
+          </select>
+          {[30, 90].map((dias) => (
+            <button
+              key={dias}
+              disabled={!regalo}
+              className="btn-sec"
+              onClick={async () => {
+                const { error } = await supabase().rpc("admin_regalar_pro", { p_perfil: regalo, p_dias: dias });
+                if (error) setError(error.message);
+                else {
+                  setOk(`Le regalaste ${dias} días de Pro.`);
+                  cargar();
+                }
+              }}
+            >
+              +{dias} días
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="tarjeta">
+        <h2 className="font-titulo text-lg font-bold">Suscripciones</h2>
+        {lista.length === 0 ? (
+          <p className="mt-2 text-sm text-gris">Todavía nadie usó Pro.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-borde text-sm">
+            {lista.map((s) => (
+              <li key={s.perfil_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <span className="min-w-0">
+                  <b>{s.nombre || "(sin nombre)"}</b>
+                  <span className="block text-xs text-gris">
+                    {s.email} · {s.usados_mes} presupuestos este mes
+                    {s.prueba_hasta && new Date(s.prueba_hasta) > new Date() ? ` · prueba hasta ${fecha(s.prueba_hasta)}` : ""}
+                    {s.proximo_cobro ? ` · próximo cobro ${fecha(s.proximo_cobro)}` : ""}
+                  </span>
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.estado === "activa" ? "bg-green-100 text-green-800" : s.es_pro ? "bg-cinta/30" : "bg-fondo text-gris"}`}>
+                  {ESTADO_SUSC[s.estado] ?? s.estado}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
 

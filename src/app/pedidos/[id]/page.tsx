@@ -1,5 +1,5 @@
 "use client";
-import { Building2, MessageCircle, CalendarDays, Check, CircleCheck, ClipboardCheck, Fence, Hourglass, House, PartyPopper, Pencil, RotateCcw, StickyNote, Zap } from "lucide-react";
+import { Building2, CalendarDays, Check, CircleCheck, ClipboardCheck, Crown, Fence, Hourglass, House, MessageCircle, PartyPopper, Pencil, RotateCcw, StickyNote, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { describirVivienda, linkComoLlegar, linkMaps, mapaEmbebido, type Ubicaci
 import { Chat } from "@/components/Chat";
 import { Preguntas } from "@/components/Preguntas";
 import { useSesion } from "@/lib/useSesion";
+import { quedanGratis, useMiPlan } from "@/lib/plan";
 import { fotoUrl, supabase } from "@/lib/supabase";
 import {
   ESTADO_LABEL,
@@ -31,6 +32,7 @@ interface Datos {
   presupuestos: Presupuesto[];
   reputaciones: Record<string, Reputacion>;
   respuestas: Record<string, Respuesta>;
+  pros: Set<string>;
   direccion: (Ubicacion & Partial<Vivienda>) | null;
   telefonoContraparte: string | null;
   yaCalifique: boolean;
@@ -57,9 +59,10 @@ export default function DetallePedido() {
     ]);
 
     const ids = [...new Set([pedido.cliente_id, ...(presupuestos ?? []).map((p) => p.profesional_id)])];
-    const [{ data: reps }, { data: resp }] = await Promise.all([
+    const [{ data: reps }, { data: resp }, { data: pros }] = await Promise.all([
       sb.from("reputacion").select("*").in("perfil_id", ids),
       sb.from("respuesta").select("*").in("perfil_id", ids),
+      sb.from("profesionales_pro").select("perfil_id").in("perfil_id", ids),
     ]);
 
     // Teléfono de la contraparte (la base sólo lo devuelve si el trabajo está asignado)
@@ -75,6 +78,7 @@ export default function DetallePedido() {
       presupuestos: presupuestos ?? [],
       reputaciones: Object.fromEntries((reps ?? []).map((r) => [r.perfil_id, r])),
       respuestas: Object.fromEntries((resp ?? []).map((r) => [r.perfil_id, r])),
+      pros: new Set((pros ?? []).map((x) => x.perfil_id as string)),
       direccion: dir?.direccion ? { ...dir, texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
@@ -190,14 +194,17 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
           </p>
         ) : (
           <ul className="space-y-3">
-            {d.presupuestos.map((pr, i) => (
+            {ordenarConPro(d).map((pr) => (
               <li key={pr.id} className="tarjeta">
                 <div className="flex items-start justify-between gap-3">
                   <Link href={`/profesionales/${pr.profesional_id}`} className="flex min-w-0 items-center gap-2.5">
                     <Avatar nombre={pr.perfiles?.nombre} foto={pr.perfiles?.foto} tam={44} />
                     <span className="min-w-0">
                       <span className="block truncate font-bold">{pr.perfiles?.nombre}</span>
-                      {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
+                      <span className="flex flex-wrap items-center gap-1">
+                        {d.pros.has(pr.profesional_id) && <EtiquetaPro />}
+                        {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
+                      </span>
                       <Estrellas {...d.reputaciones[pr.profesional_id]} />
                       {d.respuestas[pr.profesional_id] && (
                         <span className="flex items-center gap-1 text-xs text-gris"><Zap className="ico" /> Responde en {textoRespuesta(d.respuestas[pr.profesional_id].horas)}</span>
@@ -206,7 +213,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                   </Link>
                   <div className="text-right">
                     <p className="font-titulo text-2xl font-extrabold">{pesos(pr.monto)}</p>
-                    {i === 0 && d.presupuestos.length > 1 && <span className="chip">Más económico</span>}
+                    {pr.id === masBarato(d) && d.presupuestos.length > 1 && <span className="chip">Más económico</span>}
                   </div>
                 </div>
                 {pr.fecha_disponible && (
@@ -216,7 +223,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                 <Link href={`/profesionales/${pr.profesional_id}`} className="mt-2 inline-block text-sm font-semibold text-marca">
                   Ver perfil y reseñas
                 </Link>
-                <button className={`${i === 0 ? "btn" : "btn-sec"} mt-3 w-full py-2.5`} disabled={ocupado} onClick={() => elegir(pr)}>
+                <button className={`${pr.id === masBarato(d) ? "btn" : "btn-sec"} mt-3 w-full py-2.5`} disabled={ocupado} onClick={() => elegir(pr)}>
                   Elegir este presupuesto
                 </button>
               </li>
@@ -326,6 +333,21 @@ function chatCerrado(estado: Pedido["estado"]) {
   if (estado === "cancelado") return "El trabajo se canceló y el chat se cerró.";
   return undefined;
 }
+
+/** Etiqueta del plan Pro. */
+function EtiquetaPro() {
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded-full bg-cinta px-1.5 text-[11px] font-bold text-tinta">
+      <Crown className="h-3 w-3" aria-hidden /> Pro
+    </span>
+  );
+}
+
+/** Los presupuestos de profesionales Pro van primero (manteniendo el orden por precio). */
+function ordenarConPro(d: Datos) {
+  return [...d.presupuestos].sort((a, b) => Number(d.pros.has(b.profesional_id)) - Number(d.pros.has(a.profesional_id)));
+}
+const masBarato = (d: Datos) => d.presupuestos.reduce<Presupuesto | null>((m, p) => (!m || p.monto < m.monto ? p : m), null)?.id;
 
 /* ---------------- Pedido cancelado o vencido ---------------- */
 function Republicar({ pedido }: { pedido: Pedido }) {
@@ -483,6 +505,11 @@ function FormPresupuesto({
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  // Plan gratis: cuántos presupuestos le quedan este mes (sólo con el cobro activo)
+  const { plan } = useMiPlan(!previo);
+  const limitado = !previo && plan?.cobro_activo && !plan.es_pro;
+  const quedan = plan ? quedanGratis(plan) : 0;
+
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!Number(monto)) return setError("Poné el precio total del trabajo.");
@@ -498,9 +525,28 @@ function FormPresupuesto({
     else alListo();
   };
 
+  if (limitado && quedan === 0)
+    return (
+      <section className="tarjeta border-cinta-oscuro/50 bg-cinta/10">
+        <p className="flex items-center gap-2 font-bold">
+          <Crown className="ico text-cinta-oscuro" /> Usaste tus presupuestos gratis de este mes
+        </p>
+        <p className="mt-1 text-sm text-gris">
+          Con Manitos Pro mandás presupuestos ilimitados y aparecés primero. Si no, se renuevan el día 1.
+        </p>
+        <Link href="/pro" className="btn mt-3 w-full">Ver Manitos Pro</Link>
+      </section>
+    );
+
   return (
     <form onSubmit={enviar} className="tarjeta space-y-4">
       <h2 className="text-lg font-bold">{previo ? "Modificar presupuesto" : "Enviar presupuesto"}</h2>
+      {limitado && (
+        <p className="rounded-lg bg-fondo px-3 py-2 text-xs text-gris">
+          Te {quedan === 1 ? "queda" : "quedan"} <b>{quedan}</b> presupuesto{quedan === 1 ? "" : "s"} gratis este mes ·{" "}
+          <Link href="/pro" className="font-semibold text-marca">Pasate a Pro</Link>
+        </p>
+      )}
       <div>
         <label className="etiqueta">Precio total ($)</label>
         <div className="relative">
