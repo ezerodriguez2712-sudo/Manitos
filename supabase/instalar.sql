@@ -1691,3 +1691,12 @@ revoke all on function public.admin_regalar_pro(uuid, int) from public, anon;
 grant execute on function public.admin_guardar_ajustes(boolean, int, numeric, int) to authenticated;
 grant execute on function public.admin_suscripciones() to authenticated;
 grant execute on function public.admin_regalar_pro(uuid, int) to authenticated;
+
+-- =====================================================================
+-- Manitos · Migración 13: rubros nuevos
+-- Pegar en Supabase → SQL Editor → Run. Se puede correr más de una vez.
+-- =====================================================================
+insert into public.rubros (nombre, icono) values
+  ('Arreglos generales','🛠️'), ('Piletas','🏊'), ('Persianas y aberturas','🪟'),
+  ('Durlock y yesería','📐'), ('Pisos y revestimientos','🔲'), ('Fumigación','🐜')
+on conflict (nombre) do nothing;

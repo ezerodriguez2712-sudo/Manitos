@@ -69,6 +69,12 @@ const COLORES_RUBRO: Record<string, string> = {
   "Mudanzas y fletes": "#ffe7c7",
   "Techos y membranas": "#e6e1f7",
   "Electrodomésticos": "#dfeef0",
+  "Arreglos generales": "#fdeec4",
+  "Piletas": "#d3eefb",
+  "Persianas y aberturas": "#e3e8f2",
+  "Durlock y yesería": "#eeebe4",
+  "Pisos y revestimientos": "#ece3d8",
+  "Fumigación": "#e3efd6",
 };
 
 /** Ícono del rubro dentro de un azulejo de color */

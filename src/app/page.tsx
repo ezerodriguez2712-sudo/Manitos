@@ -15,7 +15,7 @@ const RUBROS: [string, string][] = [
   ["Cerrajería", "🔑"],
   ["Aire acondicionado", "❄️"],
   ["Albañilería", "🧱"],
-  ["Jardinería", "🌿"],
+  ["Arreglos generales", "🛠️"],
 ];
 
 const PASOS = [
@@ -91,7 +91,7 @@ export default function Inicio() {
             </Link>
           ))}
         </div>
-        <p className="mt-3 text-sm text-gris">Y también carpintería, herrería, limpieza, fletes, techos y electrodomésticos.</p>
+        <p className="mt-3 text-sm text-gris">Y también jardinería, piletas, persianas, durlock, pisos, carpintería, herrería, limpieza, fumigación, fletes, techos y electrodomésticos.</p>
 
         <h2 className="mt-12 text-2xl font-extrabold tracking-tight">Cómo funciona</h2>
         <ol className="mt-4 space-y-3">
