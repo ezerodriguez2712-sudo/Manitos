@@ -145,7 +145,7 @@ export function Cargando({ error }: { error?: string }) {
     );
   return (
     <div className="grid min-h-[50dvh] place-items-center text-gris" role="status" aria-label="Cargando">
-      <Logo tam={56} animado cada={1100} />
+      <Logo tam={96} animado cada={1100} />
     </div>
   );
 }

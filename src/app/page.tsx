@@ -42,9 +42,9 @@ export default function Inicio() {
       {/* Portada azul marino */}
       <section className="relative overflow-hidden bg-marca text-white">
         <div className="contenedor flex items-center justify-between pt-5">
-          <span className="flex items-center gap-2">
-            <Logo animado cada={1800} />
-            <span className="font-titulo text-xl font-extrabold tracking-tight">Manitos</span>
+          <span className="flex items-center gap-2.5">
+            <Logo animado cada={1800} tam={52} />
+            <span className="font-titulo text-2xl font-extrabold tracking-tight">Manitos</span>
           </span>
           <Link href="/ingresar" className="rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold hover:bg-white/20">
             Ingresar
