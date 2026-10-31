@@ -7,7 +7,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { Cargando, Encabezado } from "@/components/Encabezado";
 import { supabase } from "@/lib/supabase";
 
-/** Página a la que lleva el mail de "confirmá tu cuenta" (y el de cambio de email). */
+/** Página a la que lleva el mail de "confirmá tu cuenta" (y el de cambio de email), y la vuelta de Google. */
 export default function Confirmar() {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -33,7 +33,11 @@ export default function Confirmar() {
 
         const { data } = await sb.auth.getUser();
         if (!data.user) return setError("No pudimos confirmar la cuenta. Probá ingresar con tu email y contraseña.");
-        const { data: perfil } = await sb.from("perfiles").select("rol").eq("id", data.user.id).maybeSingle();
+        const { data: perfil } = await sb.from("perfiles").select("*").eq("id", data.user.id).maybeSingle();
+        if (perfil?.registro_completo === false) {
+          const rol = q.get("rol") === "profesional" ? "profesional" : "";
+          return router.replace(`/bienvenida${rol ? "?rol=profesional" : ""}`);
+        }
         router.replace(perfil?.rol === "profesional" ? "/perfil?bienvenida=1" : "/panel");
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -47,7 +51,7 @@ export default function Confirmar() {
       <main className="contenedor max-w-md py-8">
         {!error ? (
           <>
-            <p className="text-center text-gris">Confirmando tu cuenta…</p>
+            <p className="text-center text-gris">Entrando a tu cuenta…</p>
             <Cargando />
           </>
         ) : (

@@ -14,6 +14,7 @@ export interface Perfil {
   verificado?: boolean;
   matriculado?: boolean;
   creado_en?: string;
+  registro_completo?: boolean;
 }
 
 export interface Rubro {

@@ -21,6 +21,11 @@ export function useSesion(requerida = true) {
     const { data, error } = await supabase().from("perfiles").select("*").eq("id", id).maybeSingle();
     if (error) setError("No se pudo leer tu perfil: " + error.message);
     else if (!data) setError("Tu cuenta no tiene perfil creado. Volvé a registrarte o avisá al administrador.");
+    // Entró con Google y todavía no eligió rol ni cargó el celular
+    if (data?.registro_completo === false && window.location.pathname !== "/bienvenida") {
+      window.location.replace("/bienvenida");
+      return;
+    }
     setPerfil(data as Perfil | null);
   }, []);
 
