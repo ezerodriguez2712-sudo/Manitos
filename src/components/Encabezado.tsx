@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { Flame, Hammer, House, KeyRound, Paintbrush, Snowflake, Sprout, Wrench, Zap } from "lucide-react";
 import { fotoUrl, supabase } from "@/lib/supabase";
 import type { Perfil } from "@/lib/types";
 
@@ -14,7 +16,7 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
     <header className="sticky top-0 z-10 bg-marca text-white">
       <div className="contenedor flex h-14 items-center justify-between">
         <Link href={perfil ? "/panel" : "/"} className="flex items-center gap-2">
-          <Logo />
+          <Logo animado />
           <span className="font-titulo text-xl font-extrabold tracking-tight">Manitos</span>
         </Link>
         {perfil && (
@@ -37,18 +39,53 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
   );
 }
 
-/** Logo de Manitos: una casa con una llave adentro (arreglos para tu casa) */
-export function Logo({ grande = false }: { grande?: boolean }) {
-  const t = grande ? 44 : 34;
+const NAVY = "#1e3a6b";
+const AMARILLO = "#f5b800";
+/** Una herramienta por rubro: la manito las va cambiando */
+const HERRAMIENTAS = [House, Wrench, Zap, Flame, Paintbrush, Hammer, KeyRound, Snowflake, Sprout];
+/** Movimientos de la mano (clases en globals.css) */
+const MOVIMIENTOS = ["m-saludo", "m-salto", "m-choca", "m-latido", "m-sacude", "m-voltea"];
+
+/** Mano geométrica en la caja de 64×64 del logo */
+function Mano({ color }: { color: string }) {
   return (
-    <svg width={t} height={t} viewBox="0 0 64 64" aria-hidden className="shrink-0">
-      <rect width="64" height="64" rx="14" fill="#1e3a6b" />
-      <path d="M15 30 L32 16 L49 30" fill="none" stroke="#f5b800" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M19.5 27 V48 H44.5 V27" fill="none" stroke="#f5b800" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
-      <g transform="rotate(-45 32 38)">
-        <rect x="22.5" y="36.4" width="15" height="3.4" rx="1.7" fill="#ffffff" />
-        <circle cx="39" cy="38.1" r="4.6" fill="#ffffff" />
-        <rect x="39.5" y="36.6" width="5" height="3" fill="#1e3a6b" />
+    <g transform="translate(13 7) scale(1.05)" fill={color}>
+      <rect x="5" y="10" width="7" height="30" rx="3.5" />
+      <rect x="13" y="4" width="7" height="34" rx="3.5" />
+      <rect x="21" y="6" width="7" height="32" rx="3.5" />
+      <rect x="29" y="12" width="7" height="27" rx="3.5" />
+      <rect x="5" y="24" width="31" height="22" rx="9" />
+      <line x1="10" y1="38" x2="1.5" y2="27" stroke={color} strokeWidth="7.4" strokeLinecap="round" />
+    </g>
+  );
+}
+
+/**
+ * Logo de Manitos: una manito con una herramienta en la palma.
+ * Con `animado`, la mano se mueve de distintas formas y cambia de herramienta (una por rubro).
+ * Quien tiene "reducir movimiento" activado en el celular la ve quieta, con la casita.
+ */
+export function Logo({ grande = false, tam, animado = false, cada }: { grande?: boolean; tam?: number; animado?: boolean; cada?: number }) {
+  const t = tam ?? (grande ? 44 : 34);
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (!animado) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => {
+      if (!document.hidden) setI((x) => x + 1);
+    }, cada ?? 2800);
+    return () => window.clearInterval(id);
+  }, [animado, cada]);
+  const Icono = HERRAMIENTAS[i % HERRAMIENTAS.length];
+  const mov = i === 0 ? "" : MOVIMIENTOS[(i - 1) % MOVIMIENTOS.length];
+  return (
+    <svg width={t} height={t} viewBox="0 0 64 64" aria-hidden className="shrink-0 overflow-visible">
+      <rect width="64" height="64" rx="14" fill={NAVY} />
+      <g key={i} className={`logo-mano ${mov}`}>
+        <Mano color={AMARILLO} />
+        <g className={i === 0 ? "" : "logo-herramienta"}>
+          <Icono x={25} y={34.6} width={19} height={19} color={NAVY} strokeWidth={2.5} />
+        </g>
       </g>
     </svg>
   );
@@ -107,8 +144,8 @@ export function Cargando({ error }: { error?: string }) {
       </div>
     );
   return (
-    <div className="grid min-h-[50dvh] place-items-center text-gris">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-marca-suave border-t-marca" />
+    <div className="grid min-h-[50dvh] place-items-center text-gris" role="status" aria-label="Cargando">
+      <Logo tam={56} animado cada={1100} />
     </div>
   );
 }

@@ -75,6 +75,23 @@ h1, h2, h3, .titulo {
   }
 }
 
+/* Logo animado: la manito se mueve y cambia de herramienta */
+.logo-mano { transform-box: view-box; transform-origin: 32px 58px; }
+.logo-herramienta { transform-box: fill-box; transform-origin: center; animation: herramienta 0.55s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes herramienta { from { opacity: 0; transform: scale(.2) rotate(-40deg); } to { opacity: 1; transform: none; } }
+.m-saludo { animation: m-saludo 0.9s ease-in-out; }
+@keyframes m-saludo { 20% { transform: rotate(-14deg); } 45% { transform: rotate(11deg); } 70% { transform: rotate(-7deg); } 100% { transform: none; } }
+.m-salto { animation: m-salto 0.7s ease-out; }
+@keyframes m-salto { 25% { transform: translateY(2px) scale(1.06, .92); } 50% { transform: translateY(-7px) scale(.96, 1.05); } 80% { transform: translateY(1px); } 100% { transform: none; } }
+.m-choca { animation: m-choca 0.7s ease-out; }
+@keyframes m-choca { 35% { transform: rotate(10deg) scale(1.12) translate(3px, -3px); } 55% { transform: rotate(-3deg) scale(.97); } 100% { transform: none; } }
+.m-latido { animation: m-latido 0.8s ease-in-out; }
+@keyframes m-latido { 20% { transform: scale(1.12); } 40% { transform: scale(.96); } 60% { transform: scale(1.07); } 100% { transform: none; } }
+.m-sacude { animation: m-sacude 0.6s ease-in-out; }
+@keyframes m-sacude { 15%, 55% { transform: translateX(-3px) rotate(-4deg); } 35%, 75% { transform: translateX(3px) rotate(4deg); } 100% { transform: none; } }
+.m-voltea { transform-origin: 32px 32px; animation: m-voltea 0.8s ease-in-out; }
+@keyframes m-voltea { 50% { transform: scaleX(-1); } 100% { transform: none; } }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
