@@ -3,7 +3,7 @@ import { Building2, CalendarDays, Check, CircleCheck, ClipboardCheck, Crown, Fen
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, SelloVerificado, whatsapp } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, EstadoChip, Estrellas, SelloVerificado, Trayectoria, whatsapp } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { useAvisos } from "@/lib/useAvisos";
 import { describirVivienda, linkComoLlegar, linkMaps, mapaEmbebido, type Ubicacion, type Vivienda } from "@/lib/mapas";
@@ -32,6 +32,7 @@ interface Datos {
   presupuestos: Presupuesto[];
   reputaciones: Record<string, Reputacion>;
   respuestas: Record<string, Respuesta>;
+  trabajos: Record<string, number> | null;
   pros: Set<string>;
   direccion: (Ubicacion & Partial<Vivienda>) | null;
   telefonoContraparte: string | null;
@@ -59,10 +60,11 @@ export default function DetallePedido() {
     ]);
 
     const ids = [...new Set([pedido.cliente_id, ...(presupuestos ?? []).map((p) => p.profesional_id)])];
-    const [{ data: reps }, { data: resp }, { data: pros }] = await Promise.all([
+    const [{ data: reps }, { data: resp }, { data: pros }, { data: hechos, error: eHechos }] = await Promise.all([
       sb.from("reputacion").select("*").in("perfil_id", ids),
       sb.from("respuesta").select("*").in("perfil_id", ids),
       sb.from("profesionales_pro").select("perfil_id").in("perfil_id", ids),
+      sb.from("trabajos_realizados").select("perfil_id, cantidad").in("perfil_id", ids),
     ]);
 
     // Teléfono de la contraparte (la base sólo lo devuelve si el trabajo está asignado)
@@ -79,6 +81,8 @@ export default function DetallePedido() {
       reputaciones: Object.fromEntries((reps ?? []).map((r) => [r.perfil_id, r])),
       respuestas: Object.fromEntries((resp ?? []).map((r) => [r.perfil_id, r])),
       pros: new Set((pros ?? []).map((x) => x.perfil_id as string)),
+      // Si la base todavía no tiene la vista (migración 14), no se muestran los trabajos
+      trabajos: eHechos ? null : Object.fromEntries((hechos ?? []).map((x) => [x.perfil_id as string, x.cantidad as number])),
       direccion: dir?.direccion ? { ...dir, texto: dir.direccion, lat: dir.lat ?? null, lng: dir.lng ?? null } : null,
       telefonoContraparte: contacto?.telefono || null,
       yaCalifique: !!calif,
@@ -109,7 +113,7 @@ export default function DetallePedido() {
           <Cargando />
         ) : (
           <>
-            <FichaPedido d={d} />
+            <FichaPedido d={d} esCliente={d.pedido.cliente_id === perfil.id} />
             <Preguntas pedido={d.pedido} yo={perfil} />
             {d.pedido.cliente_id === perfil.id ? (
               <VistaCliente d={d} yo={perfil} recargar={cargar} />
@@ -125,7 +129,7 @@ export default function DetallePedido() {
 }
 
 /* ---------------- Ficha del pedido ---------------- */
-function FichaPedido({ d }: { d: Datos }) {
+function FichaPedido({ d, esCliente }: { d: Datos; esCliente: boolean }) {
   const p = d.pedido;
   return (
     <section className="tarjeta">
@@ -143,6 +147,9 @@ function FichaPedido({ d }: { d: Datos }) {
           <p className="mt-1 text-sm text-gris">
             {p.rubros?.nombre} en {p.zona}, publicado {hace(p.creado_en)}
           </p>
+          {!esCliente && (
+            <Trayectoria className="mt-1" prefijo="Cliente" desde={d.cliente?.creado_en} trabajos={d.trabajos ? (d.trabajos[p.cliente_id] ?? 0) : null} />
+          )}
         </div>
       </div>
       <p className="mt-2 whitespace-pre-line text-gris">{p.descripcion}</p>
@@ -206,6 +213,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                         {pr.perfiles?.verificado && <SelloVerificado matriculado={pr.perfiles.matriculado} chico />}
                       </span>
                       <Estrellas {...d.reputaciones[pr.profesional_id]} />
+                      <Trayectoria desde={pr.perfiles?.creado_en} trabajos={d.trabajos ? (d.trabajos[pr.profesional_id] ?? 0) : null} />
                       {d.respuestas[pr.profesional_id] && (
                         <span className="flex items-center gap-1 text-xs text-gris"><Zap className="ico" /> Responde en {textoRespuesta(d.respuestas[pr.profesional_id].horas)}</span>
                       )}
@@ -266,6 +274,7 @@ function VistaCliente({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar: () 
                 <span className="block truncate font-bold">{pro.nombre}</span>
                 {pro.verificado && <SelloVerificado matriculado={pro.matriculado} chico />}
                 <Estrellas {...d.reputaciones[pro.id]} />
+                <Trayectoria desde={pro.creado_en} trabajos={d.trabajos ? (d.trabajos[pro.id] ?? 0) : null} />
               </span>
             </Link>
             <p className="font-titulo text-2xl font-extrabold">{pesos(elegido.monto)}</p>
@@ -446,6 +455,7 @@ function VistaProfesional({ d, yo, recargar }: { d: Datos; yo: Perfil; recargar:
         <p className="mt-1 text-sm">
           Cliente: <b>{d.cliente?.nombre}</b> <Estrellas {...d.reputaciones[p.cliente_id]} />
         </p>
+        <Trayectoria className="mt-1" desde={d.cliente?.creado_en} trabajos={d.trabajos ? (d.trabajos[p.cliente_id] ?? 0) : null} />
         {wa && (
           <a href={wa} target="_blank" rel="noreferrer" className="btn-sec mt-3 w-full py-2.5">
             <MessageCircle className="ico" /> Escribir por WhatsApp

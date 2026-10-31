@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Flame, Hammer, House, KeyRound, Paintbrush, Snowflake, Sprout, Wrench, Zap } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, Flame, Hammer, House, KeyRound, Paintbrush, Snowflake, Sprout, Wrench, Zap } from "lucide-react";
 import { fotoUrl, supabase } from "@/lib/supabase";
 import type { Perfil } from "@/lib/types";
 
@@ -147,6 +147,33 @@ export function Cargando({ error }: { error?: string }) {
     <div className="grid min-h-[50dvh] place-items-center text-gris" role="status" aria-label="Cargando">
       <Logo tam={96} animado cada={1100} />
     </div>
+  );
+}
+
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const mesAnio = (f: string) => {
+  const d = new Date(new Date(f).getTime() - 3 * 3600e3); // hora de Córdoba
+  return `${MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+};
+
+/** "Usuario desde octubre de 2026 · 12 trabajos realizados" */
+export function Trayectoria({ desde, trabajos, prefijo, className = "" }: { desde?: string | null; trabajos?: number | null; prefijo?: string; className?: string }) {
+  if (!desde && trabajos == null) return null;
+  return (
+    <span className={`flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gris ${className}`}>
+      {prefijo && <span className="font-semibold text-tinta">{prefijo}</span>}
+      {desde && (
+        <span className="inline-flex items-center gap-1">
+          <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Usuario desde {mesAnio(desde)}
+        </span>
+      )}
+      {trabajos != null && (
+        <span className="inline-flex items-center gap-1">
+          <BriefcaseBusiness className="h-3.5 w-3.5" aria-hidden />
+          {trabajos === 0 ? "Sin trabajos todavía" : `${trabajos} trabajo${trabajos === 1 ? "" : "s"} realizado${trabajos === 1 ? "" : "s"}`}
+        </span>
+      )}
+    </span>
   );
 }
 

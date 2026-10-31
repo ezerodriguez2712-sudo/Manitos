@@ -13,6 +13,7 @@ export interface Perfil {
   suspendido?: boolean;
   verificado?: boolean;
   matriculado?: boolean;
+  creado_en?: string;
 }
 
 export interface Rubro {

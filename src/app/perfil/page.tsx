@@ -3,7 +3,7 @@ import { Camera, ChartColumn } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado, Estrellas, SelloVerificado } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, Estrellas, SelloVerificado, Trayectoria } from "@/components/Encabezado";
 import { Verificacion } from "@/components/Verificacion";
 import { GaleriaTrabajos } from "@/components/GaleriaTrabajos";
 import { CampoBarrio, SelectorZonas } from "@/components/Barrios";
@@ -33,6 +33,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
   const [rubros, setRubros] = useState<Rubro[]>([]);
   const [mios, setMios] = useState<Set<number>>(new Set());
   const [rep, setRep] = useState<Reputacion | null>(null);
+  const [trabajos, setTrabajos] = useState<number | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState(false);
@@ -45,6 +46,9 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
       .then(({ data }) => setTelefono(data?.telefono ?? ""));
     sb.from("rubros").select("*").order("nombre").then(({ data }) => setRubros(data ?? []));
     sb.from("reputacion").select("*").eq("perfil_id", perfil.id).maybeSingle().then(({ data }) => setRep(data));
+    sb.from("trabajos_realizados").select("cantidad").eq("perfil_id", perfil.id).maybeSingle().then(({ data, error }) => {
+      if (!error) setTrabajos(data?.cantidad ?? 0);
+    });
     if (esPro)
       sb.from("profesional_rubros")
         .select("rubro_id")
@@ -138,6 +142,7 @@ function Formulario({ perfil, alGuardar }: { perfil: Perfil; alGuardar: () => vo
           <div className="mt-1">
             <Estrellas promedio={rep?.promedio} cantidad={rep?.cantidad} />
           </div>
+          <Trayectoria className="mt-1" desde={perfil.creado_en} trabajos={trabajos} />
         </div>
       </section>
       {esPro && (

@@ -2,7 +2,7 @@
 import { MapPin, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Avatar, Azulejo, Cargando, Encabezado, SelloVerificado } from "@/components/Encabezado";
+import { Avatar, Azulejo, Cargando, Encabezado, SelloVerificado, Trayectoria } from "@/components/Encabezado";
 import { BarraInferior } from "@/components/BarraInferior";
 import { GaleriaTrabajos } from "@/components/GaleriaTrabajos";
 import { useSesion } from "@/lib/useSesion";
@@ -30,6 +30,7 @@ export default function PerfilProfesional() {
   const [resp, setResp] = useState<Respuesta | null>(null);
   const [resenas, setResenas] = useState<Resena[]>([]);
   const [noExiste, setNoExiste] = useState(false);
+  const [trabajos, setTrabajos] = useState<number | null>(null);
 
   useEffect(() => {
     if (!yo) return;
@@ -50,6 +51,8 @@ export default function PerfilProfesional() {
         sb.from("respuesta").select("*").eq("perfil_id", id).maybeSingle(),
       ]);
       setResp(rt);
+      const { data: th, error: eTh } = await sb.from("trabajos_realizados").select("cantidad").eq("perfil_id", id).maybeSingle();
+      if (!eTh) setTrabajos(th?.cantidad ?? 0);
       setRubros(((r ?? []) as unknown as { rubros: Rubro }[]).map((x) => x.rubros).filter(Boolean));
       setRep(re);
       setResenas((c as unknown as Resena[]) ?? []);
@@ -98,6 +101,7 @@ export default function PerfilProfesional() {
                   )}
                   {resp && <span className="inline-flex items-center gap-1 text-gris"><Zap className="ico" /> Responde en {textoRespuesta(resp.horas)}</span>}
                 </div>
+                <Trayectoria className="mt-1.5 text-sm" desde={pro.creado_en} trabajos={trabajos} />
                 {pro.descripcion && <p className="mt-3 whitespace-pre-line text-gris">{pro.descripcion}</p>}
               </div>
             </section>
