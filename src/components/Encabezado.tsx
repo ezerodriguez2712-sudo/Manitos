@@ -37,21 +37,18 @@ export function Encabezado({ perfil }: { perfil?: Perfil | null }) {
   );
 }
 
-/** Manito trabajando con llave inglesa: el logo de Manitos */
+/** Logo de Manitos: una casa con una llave adentro (arreglos para tu casa) */
 export function Logo({ grande = false }: { grande?: boolean }) {
   const t = grande ? 44 : 34;
   return (
     <svg width={t} height={t} viewBox="0 0 64 64" aria-hidden className="shrink-0">
-      <rect width="64" height="64" rx="16" fill="#ffc21a" />
-      <g transform="translate(3 -2) rotate(-40 32 32)">
-        <rect x="6" y="28.5" width="40" height="7" rx="3.5" fill="#13213f" />
-        <circle cx="48" cy="32" r="10" fill="#13213f" />
-        <rect x="49" y="28.5" width="12" height="7" rx="1.5" fill="#ffc21a" />
-        <rect x="16.5" y="44" width="15" height="14" rx="2" fill="#1f4fd1" stroke="#13213f" strokeWidth="2" />
-        <rect x="16.5" y="44" width="15" height="4" fill="#15399e" stroke="#13213f" strokeWidth="2" />
-        <rect x="14" y="31" width="20" height="15" rx="6" fill="#ffffff" stroke="#13213f" strokeWidth="2.4" />
-        <path d="M19 36v8M24 36v8M29 36v8" stroke="#13213f" strokeWidth="2" strokeLinecap="round" />
-        <rect x="15" y="23.5" width="17" height="9" rx="4.5" fill="#ffffff" stroke="#13213f" strokeWidth="2.4" />
+      <rect width="64" height="64" rx="14" fill="#1e3a6b" />
+      <path d="M15 30 L32 16 L49 30" fill="none" stroke="#f5b800" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19.5 27 V48 H44.5 V27" fill="none" stroke="#f5b800" strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" />
+      <g transform="rotate(-45 32 38)">
+        <rect x="22.5" y="36.4" width="15" height="3.4" rx="1.7" fill="#ffffff" />
+        <circle cx="39" cy="38.1" r="4.6" fill="#ffffff" />
+        <rect x="39.5" y="36.6" width="5" height="3" fill="#1e3a6b" />
       </g>
     </svg>
   );
